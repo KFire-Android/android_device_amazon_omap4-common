@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ifeq ($(findstring otter, $TARGET_BOOTLOADER_BOARD_NAME)),otter)
+ifeq ($(findstring otter, $(TARGET_BOOTLOADER_BOARD_NAME)),otter)
 
 LOCAL_PATH := $(call my-dir)
 
