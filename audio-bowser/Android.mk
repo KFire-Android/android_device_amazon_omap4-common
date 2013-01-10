@@ -1,4 +1,4 @@
-ifeq ($(findstring bowser, $TARGET_BOOTLOADER_BOARD_NAME)),bowser)
+ifeq ($(findstring bowser, $(TARGET_BOOTLOADER_BOARD_NAME)),bowser)
 
 LOCAL_PATH := $(call my-dir)
 
