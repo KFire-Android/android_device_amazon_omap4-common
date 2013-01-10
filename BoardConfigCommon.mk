@@ -1,4 +1,7 @@
-COMMON_FOLDER := device/amazon/omap4_common
+COMMON_FOLDER := device/amazon/omap4-common
+
+# set to allow building from omap4-common
+BOARD_VENDOR := amazon
 
 PRODUCT_VENDOR_KERNEL_HEADERS := $(COMMON_FOLDER)/kernel-headers
 
