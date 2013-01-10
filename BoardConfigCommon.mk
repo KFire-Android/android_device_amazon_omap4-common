@@ -15,7 +15,7 @@ BOARD_USES_GENERIC_AUDIO := false
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(COMMON_FOLDER)/bluetooth
 
 # Setup custom omap4xxx defines
-TARGET_HAS_CUSTOM_LIBION := true
+BOARD_USE_CUSTOM_LIBION := true
 
 # TI Enhancement Settings (Part 1)
 OMAP_ENHANCEMENT := true
@@ -24,8 +24,7 @@ OMAP_ENHANCEMENT := true
 #OMAP_ENHANCEMENT_CPCAM := true
 #OMAP_ENHANCEMENT_VTC := true
 OMAP_ENHANCEMENT_MULTIGPU := true
-ENHANCED_DOMX := true
-BOARD_PROVIDES_CUSTOM_DOMX := true
+BOARD_USE_TI_ENHANCED_DOMX := true
 
 # Processor
 TARGET_CPU_ABI := armeabi-v7a
@@ -67,8 +66,7 @@ BOARD_UMS_LUNFILE := "/sys/devices/virtual/android_usb/android0/f_mass_storage/l
 TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
 
 # TI Enhancement Settings (Part 2)
-ifdef ENHANCED_DOMX
-    COMMON_GLOBAL_CFLAGS += -DENHANCED_DOMX
+ifdef BOARD_USE_TI_ENHANCED_DOMX
     DOMX_PATH := $(DEVICE_FOLDER)/domx
 else
     DOMX_PATH := hardware/ti/omap4xxx/domx

@@ -22,7 +22,7 @@
 COMMON_FOLDER := device/amazon/omap4-common
 
 # Setup custom omap4xxx defines
-TARGET_HAS_CUSTOM_LIBION := true
+BOARD_USE_CUSTOM_LIBION := true
 
 ifeq ($(TARGET_PREBUILT_KERNEL),)
 LOCAL_KERNEL := $(DEVICE_FOLDER)/kernel
