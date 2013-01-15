@@ -68,6 +68,7 @@ TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
 # TI Enhancement Settings (Part 2)
 ifdef BOARD_USE_TI_ENHANCED_DOMX
     DOMX_PATH := $(DEVICE_FOLDER)/domx
+    ENHANCED_DOMX := true
 else
     DOMX_PATH := hardware/ti/omap4xxx/domx
 endif
