@@ -266,6 +266,7 @@
 #define PRODUCT_DEVICE_TABLET   "blaze_tablet"
 #define PRODUCT_DEVICE_OMAP5_SEVM   "omap5sevm"
 #define PRODUCT_DEVICE_KC1      "otter"
+#define PRODUCT_DEVICE_KC2      "otter2"
 
 /* fm */
 static bool fm_enable = false;
@@ -977,6 +978,10 @@ static int get_boardtype(struct omap_audio_device *adev)
             adev->sidetone_capture = 1;
     }
     else if(!strcmp(board, PRODUCT_DEVICE_KC1)) {
+            adev->board_type = OMAP4_KC1;
+            adev->sidetone_capture = 0;
+    }
+    else if(!strcmp(board, PRODUCT_DEVICE_KC2)) {
             adev->board_type = OMAP4_KC1;
             adev->sidetone_capture = 0;
     }
