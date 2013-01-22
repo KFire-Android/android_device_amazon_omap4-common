@@ -1,7 +1,8 @@
 LOCAL_PATH := $(call my-dir)
 
+
 ifeq ($(BOARD_VENDOR),amazon)
-ifeq ($(call is-board-platform-in-list,omap4),true)
+ifeq ($(TARGET_BOARD_PLATFORM),omap4)
 
 ifneq ($(TARGET_SIMULATOR),true)
 ifeq ($(BOARD_CREATE_AMAZON_HDCP_KEYS_SYMLINK), true)
