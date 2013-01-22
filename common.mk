@@ -21,6 +21,9 @@
 
 COMMON_FOLDER := device/amazon/omap4-common
 
+# set to allow building from omap4-common
+BOARD_VENDOR := amazon
+
 # Setup custom omap4xxx defines
 BOARD_USE_CUSTOM_LIBION := true
 
