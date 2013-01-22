@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# AOSP specific
+ifneq ($(TARGET_PRODUCT),full_$(TARGET_BOOTLOADER_BOARD_NAME))
+
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -38,3 +41,5 @@ LOCAL_MODULE:= parse_hdmi_edid
 LOCAL_MODULE_TAGS:= optional
 
 include $(BUILD_EXECUTABLE)
+
+endif
