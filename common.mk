@@ -99,7 +99,7 @@ PRODUCT_PACKAGES += \
 # Rootfs
 PRODUCT_COPY_FILES += \
     $(LOCAL_KERNEL):kernel \
-    $(COMMON_FOLDER)/root/default.prop:/root/default.prop \
+    $(COMMON_FOLDER)/default.prop:/root/default.prop \
 
 # Wifi
 PRODUCT_PACKAGES += \
