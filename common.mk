@@ -77,25 +77,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # we have enough storage space to hold precise GC data
 PRODUCT_TAGS += dalvik.gc.type-precise
 
-PRODUCT_PACKAGES += \
-    libdomx \
-    libOMX_Core \
-    libOMX.TI.DUCATI1.VIDEO.H264E \
-    libOMX.TI.DUCATI1.VIDEO.MPEG4E \
-    libOMX.TI.DUCATI1.VIDEO.DECODER \
-    libOMX.TI.DUCATI1.VIDEO.DECODER.secure \
-    libOMX.TI.DUCATI1.VIDEO.CAMERA \
-    libOMX.TI.DUCATI1.MISC.SAMPLE \
-    libstagefrighthw \
-    libI420colorconvert \
-    libtiutils \
-    libcamera \
-    libion_ti \
-    libomxcameraadapter \
-    smc_pa_ctrl \
-    tf_daemon \
-    libtf_crypto_sst
-
 # Rootfs
 PRODUCT_COPY_FILES += \
     $(LOCAL_KERNEL):kernel \
