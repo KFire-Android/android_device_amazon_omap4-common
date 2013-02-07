@@ -1,0 +1,55 @@
+#
+# This file lists all of the proprietary blobs that need to be
+# extracted from a stock device. The extract-files.sh script
+# parses this file and copies the blobs into the vendor and build
+# trees as needed.
+#
+# File format:
+#   - Comments lines start with a hash (#) character and will be
+#     ignore.
+#   - Blobs should be listed with their path relative to /system
+#     on the device.
+#   - A different destination path may be specified after a colon on
+#     the same line as the blob source path. Otherwise, the
+#     destination path with be the same as it was on the device.
+#   - Options for a particular blob are specified in a comment
+#     after the blob path.
+#
+# Blob options:
+#   - needed_for_build: the blob will also be copied into the obj
+#     directory for use in the build of other open source files.
+#   - optional: if the blob is not found, extraction will not abort.
+#     directory for use in the build of other open source files.
+#
+
+# SGX Bins
+vendor/lib/hw/gralloc.omap4430.so
+vendor/lib/hw/gralloc.omap4460.so
+vendor/lib/hw/gralloc.omap4470.so
+vendor/lib/egl/libEGL_POWERVR_SGX540_120.so
+vendor/lib/egl/libEGL_POWERVR_SGX544_112.so
+vendor/lib/egl/libGLESv1_CM_POWERVR_SGX540_120.so
+vendor/lib/egl/libGLESv2_POWERVR_SGX540_120.so
+vendor/lib/egl/libGLESv1_CM_POWERVR_SGX544_112.so
+vendor/lib/egl/libGLESv2_POWERVR_SGX544_112.so
+vendor/lib/libglslcompiler_SGX540_120.so
+vendor/lib/libglslcompiler_SGX544_112.so
+vendor/lib/libIMGegl_SGX540_120.so
+vendor/lib/libIMGegl_SGX544_112.so
+vendor/lib/libpvr2d_SGX540_120.so
+vendor/lib/libpvr2d_SGX544_112.so
+vendor/lib/libpvrANDROID_WSEGL_SGX540_120.so
+vendor/lib/libpvrANDROID_WSEGL_SGX544_112.so
+vendor/lib/libPVRScopeServices_SGX540_120.so
+vendor/lib/libPVRScopeServices_SGX544_112.so
+vendor/lib/libsrv_init_SGX540_120.so
+vendor/lib/libsrv_init_SGX544_112.so
+vendor/lib/libsrv_um_SGX540_120.so
+vendor/lib/libsrv_um_SGX544_112.so
+vendor/lib/libusc_SGX540_120.so
+vendor/lib/libusc_SGX544_112.so
+vendor/bin/pvrsrvinit
+vendor/bin/pvrsrvctl_SGX540_120
+vendor/bin/pvrsrvctl_SGX544_112
+etc/powervr.ini
+
