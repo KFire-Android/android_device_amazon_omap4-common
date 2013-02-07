@@ -115,4 +115,5 @@ PRODUCT_PACKAGES += \
     libjni_pinyinime \
     sh \
 
+$(call inherit-product-if-exists, vendor/amazon/omap4-common/omap4-common-vendor.mk)
 
