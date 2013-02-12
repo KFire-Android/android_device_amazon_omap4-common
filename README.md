@@ -1,4 +1,3 @@
-android_device_motorola_common
-==============================
+Copyright 2013 - The CyanogenMod Project
 
-Common device for OMAP4 MapPhone
+Common device configuration for Amazon Kindle Fire's (HD and non-HD)
