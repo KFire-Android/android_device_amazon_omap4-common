@@ -115,5 +115,9 @@ PRODUCT_PACKAGES += \
     libjni_pinyinime \
     sh \
 
+# Extra apps (not always included by AOSP)
+PRODUCT_PACKAGES += \
+    Email \
+
 $(call inherit-product-if-exists, vendor/amazon/omap4-common/omap4-common-vendor.mk)
 
