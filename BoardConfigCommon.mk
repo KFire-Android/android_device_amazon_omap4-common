@@ -70,9 +70,6 @@ USE_OPENGL_RENDERER := true
 # set if the target supports FBIO_WAITFORVSYNC
 TARGET_HAS_WAITFORVSYNC := true
 
-# OTA Packaging
-TARGET_CUSTOM_RELEASETOOL := ./$(COMMON_FOLDER)/releasetools/squisher
-
 # Recovery
 BOARD_HAS_NO_SELECT_BUTTON := true
 BOARD_HAS_LARGE_FILESYSTEM := true
