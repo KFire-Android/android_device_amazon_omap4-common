@@ -21,12 +21,10 @@
 *
 */
 
-#define LOG_TAG "CameraHAL"
-
-
 #include "CameraHal.h"
 
-namespace android {
+namespace Ti {
+namespace Camera {
 
 /*--------------------FrameProvider Class STARTS here-----------------------------*/
 
@@ -59,7 +57,7 @@ int FrameProvider::disableFrameNotification(int32_t frameTypes)
     return ret;
 }
 
-int FrameProvider::returnFrame(void *frameBuf, CameraFrame::FrameType frameType)
+int FrameProvider::returnFrame(CameraBuffer *frameBuf, CameraFrame::FrameType frameType)
 {
     status_t ret = NO_ERROR;
 
@@ -68,7 +66,7 @@ int FrameProvider::returnFrame(void *frameBuf, CameraFrame::FrameType frameType)
     return ret;
 }
 
-void FrameProvider::addFramePointers(void *frameBuf, void *buf)
+void FrameProvider::addFramePointers(CameraBuffer *frameBuf, void *buf)
 {
   mFrameNotifier->addFramePointers(frameBuf, buf);
   return;
@@ -105,7 +103,7 @@ int EventProvider::disableEventNotification(int32_t frameTypes)
     LOG_FUNCTION_NAME;
     status_t ret = NO_ERROR;
 
-    mEventNotifier->disableMsgType(frameTypes<<MessageNotifier::FRAME_BIT_FIELD_POSITION
+    mEventNotifier->disableMsgType(frameTypes<<MessageNotifier::EVENT_BIT_FIELD_POSITION
                                     , mCookie
                                     );
 
@@ -199,7 +197,7 @@ status_t CameraArea::checkArea(ssize_t top,
 
 status_t CameraArea::parseAreas(const char *area,
                                 size_t areaLength,
-                                Vector< sp<CameraArea> > &areas)
+                                android::Vector<android::sp<CameraArea> > &areas)
 {
     status_t ret = NO_ERROR;
     char *ctx;
@@ -211,7 +209,7 @@ status_t CameraArea::parseAreas(const char *area,
     const char sep = ',';
     ssize_t top, left, bottom, right, weight;
     char *tmpBuffer = NULL;
-    sp<CameraArea> currentArea;
+    android::sp<CameraArea> currentArea;
 
     LOG_FUNCTION_NAME
 
@@ -334,8 +332,8 @@ status_t CameraArea::parseAreas(const char *area,
     return ret;
 }
 
-bool CameraArea::areAreasDifferent(Vector< sp<CameraArea> > &area1,
-                                    Vector< sp<CameraArea> > &area2) {
+bool CameraArea::areAreasDifferent(android::Vector< android::sp<CameraArea> > &area1,
+                                    android::Vector< android::sp<CameraArea> > &area2) {
     if (area1.size() != area2.size()) {
         return true;
     }
@@ -350,7 +348,7 @@ bool CameraArea::areAreasDifferent(Vector< sp<CameraArea> > &area1,
     return false;
 }
 
-bool CameraArea::compare(const sp<CameraArea> &area) {
+bool CameraArea::compare(const android::sp<CameraArea> &area) {
     return ((mTop == area->mTop) && (mLeft == area->mLeft) &&
             (mBottom == area->mBottom) && (mRight == area->mRight) &&
             (mWeight == area->mWeight));
@@ -359,4 +357,5 @@ bool CameraArea::compare(const sp<CameraArea> &area) {
 
 /*--------------------CameraArea Class ENDS here-----------------------------*/
 
-};
+} // namespace Camera
+} // namespace Ti
