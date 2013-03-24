@@ -117,6 +117,10 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libion.so
 
+# OMAP4
+PRODUCT_PACKAGES += \
+    gralloc.omap4.so
+
 # Prebuilts
 PRODUCT_COPY_FILES += \
     $(COMMON_FOLDER)/prebuilt/etc/gps.conf:/system/etc/gps.conf
