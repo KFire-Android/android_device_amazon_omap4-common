@@ -95,8 +95,9 @@ const CapResolution OMXCameraAdapter::mImageCapRes [] = {
     { 1280,  720, "1280x720" },
     { 1152,  864, "1152x864" },
     { 1280,  960, "1280x960" },
-    { 1024,  768, "1024x768" },
 #endif
+//    { 1280,  800, "1280x800" },
+    { 1024,  768, "1024x768" },
     {  640,  480, "640x480" },
     {  320,  240, "320x240" },
 };
@@ -110,8 +111,9 @@ const CapResolution OMXCameraAdapter::mImageCapResSS [] = {
    { 2048*2, 1536, "4096x1536" },
    { 1600*2, 1200, "3200x1200" },
    { 1280*2,  960, "2560x960" },
-   { 1024*2,  768, "2048x768" },
 #endif
+//   { 1280*2,  800, "2560x800" },
+   { 1024*2,  768, "2048x768" },
    {  640*2,  480, "1280x480" },
    {  320*2,  240, "640x240" },
 };
@@ -125,8 +127,9 @@ const CapResolution OMXCameraAdapter::mImageCapResTB [] = {
    { 2048, 1536*2, "2048x3072" },
    { 1600, 1200*2, "1600x2400" },
    { 1280,  960*2, "1280x1920" },
-   { 1024,  768*2, "1024x1536" },
 #endif
+//   { 1280,  800*2, "1280x1600" },
+   { 1024,  768*2, "1024x1536" },
    {  640,  480*2, "640x960" },
    {  320,  240*2, "320x480" },
 };
@@ -134,13 +137,13 @@ const CapResolution OMXCameraAdapter::mImageCapResTB [] = {
 const CapResolution OMXCameraAdapter::mPreviewRes [] = {
 #if 0
     { 1920, 1080, "1920x1080" },
+#endif
     { 1280, 720, "1280x720" },
     { 960, 720, "960x720" },
     { 800, 480, "800x480" },
     { 720, 576, "720x576" },
     { 720, 480, "720x480" },
     { 768, 576, "768x576" },
-#endif
     { 640, 480, "640x480" },
     { 320, 240, "320x240" },
     { 352, 288, "352x288" },
@@ -154,12 +157,12 @@ const CapResolution OMXCameraAdapter::mPreviewPortraitRes [] = {
     //Portrait resolutions
 #if 0
     { 1088, 1920, "1088x1920" },
+#endif
     { 720, 1280, "720x1280" },
     { 480, 800, "480x800" },
     { 576, 720, "576x720" },
     { 576, 768, "576x768" },
     { 480, 720, "480x720" },
-#endif
     { 480, 640, "480x640" },
     { 288, 352, "288x352" },
     { 240, 320, "240x320" },
@@ -172,12 +175,12 @@ const CapResolution OMXCameraAdapter::mPreviewPortraitRes [] = {
 const CapResolution OMXCameraAdapter::mPreviewResSS [] = {
 #if 0
    { 1920*2, 1080, "3840x1080" },
+#endif
    { 1280*2,  720, "2560x720" },
    {  800*2,  480, "1600x480" },
    {  720*2,  576, "1440x576" },
    {  720*2,  480, "1440x480" },
    {  768*2,  576, "1536x576" },
-#endif
    {  640*2,  480, "1280x480" },
    {  320*2,  240, "640x240" },
    {  352*2,  288, "704x288" },
@@ -189,12 +192,12 @@ const CapResolution OMXCameraAdapter::mPreviewResSS [] = {
 const CapResolution OMXCameraAdapter::mPreviewResTB [] = {
 #if 0
    { 1920, 1080*2, "1920x2160" },
+#endif
    { 1280,  720*2, "1280x1440" },
    {  800,  480*2, "800x960" },
    {  720,  576*2, "720x1152" },
    {  720,  480*2, "720x960" },
    {  768,  576*2, "768x1152" },
-#endif
    {  640,  480*2, "640x960" },
    {  320,  240*2, "320x480" },
    {  352,  288*2, "352x576" },
@@ -1033,10 +1036,16 @@ status_t OMXCameraAdapter::insertFramerates(CameraProperties::Properties* params
     {
         android::Vector<FpsRange> fpsRanges;
 
+#if 0
         const int minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE,
                 androidFromDucatiFrameRate(caps.xFramerateMin));
         const int maxFrameRate = min<int>(FPS_MAX * CameraHal::VFR_SCALE,
                 androidFromDucatiFrameRate(caps.xFramerateMax));
+#endif
+        CAMHAL_LOGI("Frame rate range: MinFR (%d, %d), MaxFR (%d, %d)", FPS_MIN * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMin), FPS_MAX * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMax));
+
+        const int minFrameRate = FPS_MIN * CameraHal::VFR_SCALE;
+        const int maxFrameRate = FPS_MAX * CameraHal::VFR_SCALE;
 
         if ( minFrameRate > maxFrameRate ) {
             CAMHAL_LOGE("Invalid frame rate range: [%d .. %d] (%d > %d)", caps.xFramerateMin, caps.xFramerateMax, minFrameRate, maxFrameRate);
@@ -2457,7 +2466,7 @@ status_t OMXCameraAdapter::getCaps(const int sensorId, CameraProperties::Propert
     OMX_INIT_STRUCT_PTR (&sharedBuffer, OMX_TI_CONFIG_SHAREDBUFFER);
     sharedBuffer.nPortIndex = OMX_ALL;
     sharedBuffer.nSharedBuffSize = caps_size;
-    sharedBuffer.pSharedBuff = (OMX_U8 *) caps; //camera_buffer_get_omx_ptr (&bufferlist[0]);
+    sharedBuffer.pSharedBuff = (OMX_U8 *) caps; // FIXME-HASH: camera_buffer_get_omx_ptr (&bufferlist[0]);
 
     // Get capabilities from OMX Camera
     eError =  OMX_GetConfig(handle, (OMX_INDEXTYPE) OMX_TI_IndexConfigCamCapabilities, &sharedBuffer);
