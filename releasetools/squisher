@@ -38,9 +38,9 @@ fi
 # Determine what to name the new signed package
 REALDATE=`date -u +%Y%m%d`
 
-MODVERSION=`sed -n -e'/ro\.cm\.version/s/^.*=//p' $REPACK/ota/system/build.prop`
+MODVERSION=`sed -n -e'/ro\.cm\.version/s/^.*=//p' $OUT/system/build.prop`
 echo -e $CL_CYN"MODVERSION: $MODVERSION"$CL_RST
-OUTFILE=$OUT/phablet-$REALDATE-$TARGET_DEVICE.zip
+OUTFILE=$OUT/phablet-$REALDATE-$TARGET_PRODUCT.zip
 
 ln -f $OTAPACKAGE $OUTFILE
 
