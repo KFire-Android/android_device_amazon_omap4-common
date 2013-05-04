@@ -27,6 +27,7 @@
 #include <utils/Timers.h>
 
 #include "hwc_dev.h"
+#include "sw_vsync.h"
 
 static pthread_t vsync_thread;
 static pthread_mutex_t vsync_mutex = PTHREAD_MUTEX_INITIALIZER;

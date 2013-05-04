@@ -102,6 +102,8 @@ typedef struct rgz_ext_layer_list {
  */
 #define RGZ_IN_HWC 2
 
+void rgz_enable_debug_trace(int enable);
+
 int rgz_in(rgz_in_params_t *param, rgz_t *rgz);
 
 /* This means all layers can be blitted */

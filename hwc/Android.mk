@@ -21,8 +21,20 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/../vendor/lib/hw
 LOCAL_SHARED_LIBRARIES := liblog libEGL libcutils libutils libhardware libhardware_legacy libz \
-                          libion_ti
-LOCAL_SRC_FILES := hwc.c rgz_2d.c dock_image.c sw_vsync.c
+                          libion_ti libedid libdsswbhal
+
+LOCAL_SRC_FILES := \
+    blitter.c \
+    color_fmt.c \
+    display.c \
+    dsscomp.c \
+    dump.c \
+    hwc.c \
+    layer.c \
+    rgz_2d.c \
+    sw_vsync.c \
+    utils.c
+
 LOCAL_STATIC_LIBRARIES := libpng
 
 LOCAL_MODULE_TAGS := optional
@@ -33,8 +45,8 @@ LOCAL_C_INCLUDES += external/libpng external/zlib
 
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/../edid/inc \
-    $(LOCAL_PATH)/../include
-LOCAL_SHARED_LIBRARIES += libedid
+    $(LOCAL_PATH)/../include \
+    $(LOCAL_PATH)/../libdsswb
 
 # LOG_NDEBUG=0 means verbose logging enabled
 # LOCAL_CFLAGS += -DLOG_NDEBUG=0
