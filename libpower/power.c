@@ -123,6 +123,11 @@ static void omap_power_init(struct power_module *module) {
         return;
     }
 
+    tmp = sysfs_read(CPUFREQ_CPU0 "scaling_max_freq", current_max_freq, sizeof(current_max_freq));
+    if (tmp <= 0) {
+        ALOGE("Error reading scaling_max_freq\n");
+    }
+
     freq_num = str_to_tokens(freq_buf, freq_list, MAX_FREQ_NUMBER);
     if (!freq_num) {
         return;
