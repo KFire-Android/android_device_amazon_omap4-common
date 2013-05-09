@@ -1861,7 +1861,7 @@ status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
                                    mCameraAdapterParameters.mImagePortIndex,
                                    0,
                                    imgCaptureData->mBufSize,
-                                   (OMX_U8*)bufArr[index].opaque); // camera_buffer_get_omx_ptr(&bufArr[index])
+                                   (OMX_U8*)camera_buffer_get_omx_ptr(&bufArr[index])); // FIXME-HASH: bufArr[index].opaque
 
             CAMHAL_LOGDB("OMX_UseBuffer = 0x%x", eError);
             GOTO_EXIT_IF(( eError != OMX_ErrorNone ), eError);
@@ -1905,13 +1905,13 @@ status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
 #endif
 
 // FIXME-HASH: REMOVED FOR NOW
-#if 0
         if (mNextState != LOADED_REPROCESS_CAPTURE_STATE) {
             // Enable WB and vector shot extra data for metadata
             setExtraData(true, mCameraAdapterParameters.mImagePortIndex, OMX_WhiteBalance);
-            setExtraData(true, mCameraAdapterParameters.mImagePortIndex, OMX_TI_LSCTable);
+//            setExtraData(true, mCameraAdapterParameters.mImagePortIndex, OMX_TI_LSCTable);
         }
 
+#if 0
         // CPCam mode only supports vector shot
         // Regular capture is not supported
         if ( (mCapMode == CP_CAM) && (mNextState != LOADED_REPROCESS_CAPTURE_STATE) ) {
@@ -2074,7 +2074,7 @@ status_t OMXCameraAdapter::UseBuffersRawCapture(CameraBuffer *bufArr, int num)
                                 mCameraAdapterParameters.mVideoPortIndex,
                                 0,
                                 mCaptureBuffersLength,
-                                (OMX_U8*)bufArr[index].opaque); // camera_buffer_get_omx_ptr(&bufArr[index])
+                                (OMX_U8*)camera_buffer_get_omx_ptr(&bufArr[index])); // FIXME-HASH: bufArr[index].opaque
         if (eError != OMX_ErrorNone) {
             CAMHAL_LOGEB("OMX_UseBuffer = 0x%x", eError);
         }
