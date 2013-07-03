@@ -333,8 +333,6 @@ PVRSRV_ERROR SGXPrePowerState (IMG_HANDLE				hDevHandle,
 			PDUMPCOMMENT("SGX idle request");
 		}
 
-		powering_down = 1;
-
 		sCommand.ui32Data[1] = ui32PowerCmd;
 
 		eError = SGXScheduleCCBCommand(psDeviceNode, SGXMKIF_CMD_POWER, &sCommand, KERNEL_ID, 0, IMG_NULL, IMG_FALSE);
@@ -417,6 +415,8 @@ PVRSRV_ERROR SGXPrePowerState (IMG_HANDLE				hDevHandle,
 							  psDevInfo->ui32MasterClkGateStatus2Mask,
 							  "Wait for SGX master clock gating (2)");
 		#endif /* SGX_FEATURE_MP */
+
+		powering_down = 1;
 
 		if (eNewPowerState == PVRSRV_DEV_POWER_STATE_OFF)
 		{
