@@ -55,7 +55,6 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     wifi.interface=wlan0 \
     wifi.supplicant_scan_interval=120 \
-    hwui.render_dirty_regions=false \
     ro.opengles.version=131072 \
     com.ti.omap_enhancement=true \
     omap.enhancement=true \
