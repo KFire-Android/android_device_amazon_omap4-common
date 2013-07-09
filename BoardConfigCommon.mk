@@ -75,6 +75,7 @@ BOARD_HAS_NO_SELECT_BUTTON := true
 BOARD_HAS_LARGE_FILESYSTEM := true
 BOARD_UMS_LUNFILE := "/sys/devices/virtual/android_usb/android0/f_mass_storage/lun/file"
 TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
+TW_INCLUDE_FB2PNG := true
 
 # TI Enhancement Settings (Part 2)
 ifdef BOARD_USE_TI_ENHANCED_DOMX
