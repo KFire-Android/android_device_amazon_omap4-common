@@ -65,8 +65,8 @@
 
 #define ABE_BASE_FRAME_COUNT	24
 
-#define SHORT_PERIOD_MULTIPLIER	80  /* 40 ms */
-#define LONG_PERIOD_MULTIPLIER	1 /* 40 ms */
+#define SHORT_PERIOD_MULTIPLIER	40  /* 20 ms */
+#define LONG_PERIOD_MULTIPLIER	2 /* 40 ms */
 
 #define OUT_SHORT_PERIOD_SIZE	(ABE_BASE_FRAME_COUNT * SHORT_PERIOD_MULTIPLIER)
 #define OUT_SHORT_PERIOD_COUNT	4
@@ -78,7 +78,7 @@
 #define OUT_SAMPLING_RATE	48000
 #endif
 
-#define IN_PERIOD_SIZE		1024
+#define IN_PERIOD_SIZE		OUT_SHORT_PERIOD_SIZE
 #define IN_PERIOD_COUNT		2
 #define IN_SAMPLING_RATE	44100
 
@@ -100,10 +100,11 @@ enum {
 struct pcm_config pcm_config_out = {
     .channels = 2,
     .rate = OUT_SAMPLING_RATE,
-    .period_size = OUT_LONG_PERIOD_SIZE,
-    .period_count = OUT_LONG_PERIOD_COUNT,
+    .period_size = OUT_SHORT_PERIOD_SIZE,
+    .period_count = OUT_SHORT_PERIOD_COUNT,
     .format = PCM_FORMAT_S16_LE,
-    .start_threshold = OUT_LONG_PERIOD_SIZE * 2,
+    .start_threshold = OUT_SHORT_PERIOD_SIZE * 2,
+    .avail_min = OUT_SHORT_PERIOD_SIZE,
 };
 
 struct pcm_config pcm_config_in = {
