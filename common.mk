@@ -117,5 +117,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     Email \
 
+#symlinks
+PRODUCT_PACKAGES += \
+    libion.so
+
 $(call inherit-product-if-exists, vendor/amazon/omap4-common/omap4-common-vendor.mk)
 
