@@ -115,5 +115,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libion.so
 
+# Prebuilts
+PRODUCT_COPY_FILES += \
+    $(COMMON_FOLDER)/prebuilt/etc/gps.conf:/system/etc/gps.conf
+
 $(call inherit-product-if-exists, vendor/amazon/omap4-common/omap4-common-vendor.mk)
 
