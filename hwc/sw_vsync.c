@@ -27,6 +27,7 @@
 #include <utils/Timers.h>
 
 #include "hwc_dev.h"
+#include "sw_vsync.h"
 
 static pthread_t vsync_thread;
 static pthread_mutex_t vsync_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -94,7 +95,8 @@ bool use_sw_vsync()
     bool rv = false;
     property_get("ro.product.board", board, "");
     if ((strncmp("blaze", board, PROPERTY_VALUE_MAX) == 0) ||
-        (strncmp("panda5", board, PROPERTY_VALUE_MAX) == 0)) {
+        (strncmp("panda5", board, PROPERTY_VALUE_MAX) == 0) ||
+        (strncmp("jacinto6evm", board, PROPERTY_VALUE_MAX) == 0)) {
         /* TODO: panda5 really should support h/w vsync */
         rv = true;
     } else {

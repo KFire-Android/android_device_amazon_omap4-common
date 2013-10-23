@@ -17,6 +17,8 @@
 #ifndef __SWVSYNC_H__
 #define __SWVSYNC_H__
 
+typedef struct omap_hwc_device omap_hwc_device_t;
+
 bool use_sw_vsync();
 void init_sw_vsync(omap_hwc_device_t *hwc_dev);
 void start_sw_vsync();

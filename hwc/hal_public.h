@@ -29,6 +29,7 @@
  */
 
 #include <hardware/gralloc.h>
+#include <hardware/hwcomposer_defs.h>
 
 #define ALIGN(x,a)	(((x) + (a) - 1L) & ~((a) - 1L))
 #define HW_ALIGN	32
@@ -40,6 +41,17 @@
  * Future OEM video formats might be three sub-allocs (Y, U, V planes).
  */
 #define MAX_SUB_ALLOCS 3
+
+/* JB MR1 enables dual display support in Android framework. We continue to
+ * use the FB HAL architecture to enable such a support, and for this we need
+ * FB1 usage identifier in gralloc.
+ */
+#ifndef GRALLOC_HARDWARE_FB1
+#define GRALLOC_HARDWARE_FB1 "fb1"
+#endif
+
+/* Number of display identifier from hwcomposer_defs */
+#define NUM_FB_DEVICES HWC_NUM_DISPLAY_TYPES
 
 typedef struct
 {
@@ -119,7 +131,8 @@ typedef struct IMG_gralloc_module_public_t
 	 * framebuffer device data required by the allocator, WSEGL
 	 * modules and composerhal.
 	 */
-	IMG_framebuffer_device_public_t *psFrameBufferDevice;
+	IMG_framebuffer_device_public_t *psFbDevice[NUM_FB_DEVICES];
+
 
 	int (*GetPhyAddrs)(struct IMG_gralloc_module_public_t const* module,
 					   buffer_handle_t handle,
@@ -184,5 +197,14 @@ IMG_buffer_format_public_t;
 #else
 #error GRALLOC_USAGE_PHYS_CONTIG should only be defined by hal_public.h
 #endif
+
+/* We use private_3 gralloc usage flag for identifying FB1 swapchain */
+/* private_2 is used for EXCLUSIVE_DISP in ICS */
+#ifndef GRALLOC_USAGE_HW_FB1
+#define GRALLOC_USAGE_HW_FB1 GRALLOC_USAGE_PRIVATE_3
+#else
+#error GRALLOC_USAGE_HW_FB1 should only be defined by hal_public.h
+#endif
+
 #endif /* HAL_PUBLIC_H */
 

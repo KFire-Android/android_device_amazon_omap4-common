@@ -33,39 +33,21 @@
 #include <hardware/hwcomposer.h>
 
 #include "hwc_dev.h"
+#include "hal_public.h"
+#include "layer.h"
+#include "color_fmt.h"
+#include "utils.h"
+#include "layer.h"
+#include "dump.h"
 
-static int rgz_handle_to_stride(IMG_native_handle_t *h);
 #define BVDUMP(p,t,parms)
-#define HANDLE_TO_BUFFER(h) NULL
-/* Needs to be meaningful for TILER & GFX buffers and NV12 */
-#define HANDLE_TO_STRIDE(h) rgz_handle_to_stride(h)
 #define DSTSTRIDE(dstgeom) dstgeom->virtstride
-
-/* Borrowed macros from hwc.c vvv - consider sharing later */
-#define min(a, b) ( { typeof(a) __a = (a), __b = (b); __a < __b ? __a : __b; } )
-#define max(a, b) ( { typeof(a) __a = (a), __b = (b); __a > __b ? __a : __b; } )
-#define swap(a, b) do { typeof(a) __a = (a); (a) = (b); (b) = __a; } while (0)
-
-#define WIDTH(rect) ((rect).right - (rect).left)
-#define HEIGHT(rect) ((rect).bottom - (rect).top)
-
-#define is_RGB(format) ((format) == HAL_PIXEL_FORMAT_BGRA_8888 || (format) == HAL_PIXEL_FORMAT_RGB_565 || (format) == HAL_PIXEL_FORMAT_BGRX_8888)
-#define is_BGR(format) ((format) == HAL_PIXEL_FORMAT_RGBX_8888 || (format) == HAL_PIXEL_FORMAT_RGBA_8888)
-#define is_NV12(format) ((format) == HAL_PIXEL_FORMAT_TI_NV12 || (format) == HAL_PIXEL_FORMAT_TI_NV12_PADDED)
-
-#define HAL_PIXEL_FORMAT_BGRX_8888 0x1FF
-#define HAL_PIXEL_FORMAT_TI_NV12 0x100
-#define HAL_PIXEL_FORMAT_TI_NV12_PADDED 0x101
-/* Borrowed macros from hwc.c ^^^ */
-#define is_OPAQUE(format) ((format) == HAL_PIXEL_FORMAT_RGB_565 || (format) == HAL_PIXEL_FORMAT_RGBX_8888 || (format) == HAL_PIXEL_FORMAT_BGRX_8888)
 
 /* OUTP the means for grabbing diagnostic data */
 #define OUTP ALOGI
 #define OUTE ALOGE
 
 #define IS_BVCMD(params) (params->op == RGZ_OUT_BVCMD_REGION || params->op == RGZ_OUT_BVCMD_PAINT)
-
-#define RECT_INTERSECTS(a, b) (((a).bottom > (b).top) && ((a).top < (b).bottom) && ((a).right > (b).left) && ((a).left < (b).right))
 
 /* Buffer indexes used to distinguish background and layers with the clear fb hint */
 #define RGZ_BACKGROUND_BUFFIDX -2
@@ -76,19 +58,17 @@ struct rgz_blts {
     int idx;
 };
 
-
 static int rgz_hwc_layer_blit(rgz_out_params_t *params, rgz_layer_t *rgz_layer);
 static void rgz_blts_init(struct rgz_blts *blts);
 static void rgz_blts_free(struct rgz_blts *blts);
 static struct rgz_blt_entry* rgz_blts_get(struct rgz_blts *blts, rgz_out_params_t *params);
 static int rgz_blts_bvdirect(rgz_t* rgz, struct rgz_blts *blts, rgz_out_params_t *params);
 static void rgz_get_src_rect(hwc_layer_1_t* layer, blit_rect_t *subregion_rect, blit_rect_t *res_rect);
-static int hal_to_ocd(int color);
 static int rgz_get_orientation(unsigned int transform);
 static int rgz_get_flip_flags(unsigned int transform, int use_src2_flags);
-static int rgz_hwc_scaled(hwc_layer_1_t *layer);
 
-int debug = 0;
+static int debug = 0;
+static int debug_trace = 0;
 struct rgz_blts blts;
 /* Represents a screen sized background layer */
 static hwc_layer_1_t bg_layer;
@@ -153,7 +133,7 @@ static int get_layer_ops(blit_hregion_t *hregion, int subregion, int *bottom)
             *bottom = l;
             hwc_layer_1_t *layer = &hregion->rgz_layers[l]->hwc_layer;
             IMG_native_handle_t *h = (IMG_native_handle_t *)layer->handle;
-            if ((layer->blending != HWC_BLENDING_PREMULT) || is_OPAQUE(h->iFormat))
+            if ((layer->blending != HWC_BLENDING_PREMULT) || is_opaque_format(h->iFormat))
                 break;
         }
     }
@@ -209,43 +189,13 @@ static void rgz_out_svg(rgz_t *rgz, rgz_out_params_t *params)
     svgout_footer();
 }
 
-/* XXX duplicate of hwc.c version */
-static void dump_layer(hwc_layer_1_t const* l, int iserr)
-{
-#define FMT(f) ((f) == HAL_PIXEL_FORMAT_TI_NV12 ? "NV12" : \
-                (f) == HAL_PIXEL_FORMAT_BGRX_8888 ? "xRGB32" : \
-                (f) == HAL_PIXEL_FORMAT_RGBX_8888 ? "xBGR32" : \
-                (f) == HAL_PIXEL_FORMAT_BGRA_8888 ? "ARGB32" : \
-                (f) == HAL_PIXEL_FORMAT_RGBA_8888 ? "ABGR32" : \
-                (f) == HAL_PIXEL_FORMAT_RGB_565 ? "RGB565" : "??")
-
-    OUTE("%stype=%d, flags=%08x, handle=%p, tr=%02x, blend=%04x, {%d,%d,%d,%d}, {%d,%d,%d,%d}",
-            iserr ? ">>  " : "    ",
-            l->compositionType, l->flags, l->handle, l->transform, l->blending,
-            l->sourceCrop.left,
-            l->sourceCrop.top,
-            l->sourceCrop.right,
-            l->sourceCrop.bottom,
-            l->displayFrame.left,
-            l->displayFrame.top,
-            l->displayFrame.right,
-            l->displayFrame.bottom);
-    if (l->handle) {
-        IMG_native_handle_t *h = (IMG_native_handle_t *)l->handle;
-        OUTE("%s%d*%d(%s)",
-            iserr ? ">>  " : "    ",
-            h->iWidth, h->iHeight, FMT(h->iFormat));
-        OUTE("hndl %p", l->handle);
-    }
-}
-
 static void dump_all(rgz_layer_t *rgz_layers, unsigned int layerno, unsigned int errlayer)
 {
     unsigned int i;
     for (i = 0; i < layerno; i++) {
         hwc_layer_1_t *l = &rgz_layers[i].hwc_layer;
         OUTE("Layer %d", i);
-        dump_layer(l, errlayer == i);
+        dump_layer_ext(l, errlayer == i);
     }
 }
 
@@ -341,7 +291,7 @@ static void rgz_get_rotated_view(blit_rect_t *outer_rect, blit_rect_t *inner_rec
     }
 
     if (orientation % 180)
-        swap(inner_width, inner_height);
+        SWAP(inner_width, inner_height);
 
     res_rect->right = res_rect->left + inner_width;
     res_rect->bottom = res_rect->top + inner_height;
@@ -349,7 +299,7 @@ static void rgz_get_rotated_view(blit_rect_t *outer_rect, blit_rect_t *inner_rec
 
 static void rgz_get_src_rect(hwc_layer_1_t* layer, blit_rect_t *subregion_rect, blit_rect_t *res_rect)
 {
-    if (rgz_hwc_scaled(layer)) {
+    if (is_scaled_layer(layer)) {
         /*
          * If the layer is scaled we use the whole cropping rectangle from the
          * source and just move the clipping rectangle for the region we want to
@@ -434,7 +384,7 @@ static void rgz_rotate_dst(struct rgz_blt_entry* e, int dst_orientation)
     cliprect->height = HEIGHT(res_rect);
 
     if (dst_orientation % 180)
-        swap(e->dstgeom.width, e->dstgeom.height);
+        SWAP(e->dstgeom.width, e->dstgeom.height);
 }
 
 static void rgz_set_dst_data(rgz_out_params_t *params, blit_rect_t *subregion_rect,
@@ -492,7 +442,7 @@ static void rgz_rotate_src(struct rgz_blt_entry* e, int src_orientation, int is_
     srcrect->height = HEIGHT(res_rect);
 
     if (src_orientation % 180)
-        swap(srcgeom->width, srcgeom->height);
+        SWAP(srcgeom->width, srcgeom->height);
 }
 
 static void rgz_set_src_data(rgz_out_params_t *params, rgz_layer_t *rgz_layer,
@@ -505,14 +455,16 @@ static void rgz_set_src_data(rgz_out_params_t *params, rgz_layer_t *rgz_layer,
     struct bvrect *srcrect = is_src2 ? &e->bp.src2rect : &e->bp.src1rect;
     IMG_native_handle_t *handle = (IMG_native_handle_t *)hwc_layer->handle;
 
+    int stride = get_stride_from_format(handle->iFormat, handle->iWidth);
+
     srcdesc->structsize = sizeof(struct bvbuffdesc);
-    srcdesc->length = handle->iHeight * HANDLE_TO_STRIDE(handle);
+    srcdesc->length = handle->iHeight * stride;
     srcdesc->auxptr = (void*)rgz_layer->buffidx;
     srcgeom->structsize = sizeof(struct bvsurfgeom);
-    srcgeom->format = hal_to_ocd(handle->iFormat);
+    srcgeom->format = convert_hal_to_ocd_format(handle->iFormat);
     srcgeom->width = handle->iWidth;
     srcgeom->height = handle->iHeight;
-    srcgeom->virtstride = HANDLE_TO_STRIDE(handle);
+    srcgeom->virtstride = stride;
 
     /* Find out what portion of the src we want to use for the blit */
     blit_rect_t res_rect;
@@ -541,10 +493,10 @@ static void rgz_set_clip_rect(rgz_out_params_t *params, blit_rect_t *subregion_r
     rgz_get_screen_info(params, &screen_geom);
 
     blit_rect_t clip_rect;
-    clip_rect.left = max(0, subregion_rect->left);
-    clip_rect.top = max(0, subregion_rect->top);
-    clip_rect.bottom = min(screen_geom->height, subregion_rect->bottom);
-    clip_rect.right = min(screen_geom->width, subregion_rect->right);
+    clip_rect.left = MAX(0, subregion_rect->left);
+    clip_rect.top = MAX(0, subregion_rect->top);
+    clip_rect.bottom = MIN(screen_geom->height, subregion_rect->bottom);
+    clip_rect.right = MIN(screen_geom->width, subregion_rect->right);
 
     e->bp.cliprect.left = clip_rect.left;
     e->bp.cliprect.top = clip_rect.top;
@@ -564,12 +516,6 @@ static void rgz_set_src2_is_dst(rgz_out_params_t *params, struct rgz_blt_entry* 
     e->bp.src2rect = e->bp.dstrect;
 }
 
-static int rgz_is_layer_nv12(hwc_layer_1_t *layer)
-{
-    IMG_native_handle_t *handle = (IMG_native_handle_t *)layer->handle;
-    return is_NV12(handle->iFormat);
-}
-
 /*
  * Configure the scaling mode according to the layer format
  */
@@ -579,7 +525,7 @@ static void rgz_cfg_scale_mode(struct rgz_blt_entry* e, hwc_layer_1_t *layer)
      * TODO: Revisit scaling mode assignment later, output between GPU and GC320
      * seem different
      */
-    e->bp.scalemode = rgz_is_layer_nv12(layer) ? BVSCALE_9x9_TAP : BVSCALE_BILINEAR;
+    e->bp.scalemode = is_nv12_layer(layer) ? BVSCALE_9x9_TAP : BVSCALE_BILINEAR;
 }
 
 /*
@@ -597,7 +543,7 @@ static struct rgz_blt_entry* rgz_hwc_subregion_copy(rgz_out_params_t *params,
     rgz_set_async(e, 1);
 
     blit_rect_t tmp_rect;
-    if (rgz_hwc_scaled(hwc_src1)) {
+    if (is_scaled_layer(hwc_src1)) {
         rgz_get_displayframe_rect(hwc_src1, &tmp_rect);
         rgz_cfg_scale_mode(e, hwc_src1);
     } else
@@ -606,7 +552,7 @@ static struct rgz_blt_entry* rgz_hwc_subregion_copy(rgz_out_params_t *params,
     int src1_orientation = rgz_get_orientation(hwc_src1->transform);
     int dst_orientation = 0;
 
-    if (rgz_is_layer_nv12(hwc_src1)) {
+    if (is_nv12_layer(hwc_src1)) {
         /*
          * Leave NV12 as 0 degree and rotate destination instead, this is done
          * because of a GC limitation. Rotate destination CW.
@@ -644,7 +590,7 @@ static struct rgz_blt_entry* rgz_hwc_subregion_blend(rgz_out_params_t *params,
     rgz_set_async(e, 1);
 
     blit_rect_t tmp_rect;
-    if (rgz_hwc_scaled(hwc_src1)) {
+    if (is_scaled_layer(hwc_src1)) {
         rgz_get_displayframe_rect(hwc_src1, &tmp_rect);
         rgz_cfg_scale_mode(e, hwc_src1);
     } else
@@ -653,7 +599,7 @@ static struct rgz_blt_entry* rgz_hwc_subregion_blend(rgz_out_params_t *params,
     int src1_orientation = rgz_get_orientation(hwc_src1->transform);
     int dst_orientation = 0;
 
-    if (rgz_is_layer_nv12(hwc_src1)) {
+    if (is_nv12_layer(hwc_src1)) {
         /*
          * Leave NV12 as 0 degree and rotate destination instead, this is done
          * because of a GC limitation. Rotate destination CW.
@@ -672,13 +618,13 @@ static struct rgz_blt_entry* rgz_hwc_subregion_blend(rgz_out_params_t *params,
          * src2 if both have scaling, hence only src1 is used for now
          */
         hwc_layer_1_t *hwc_src2 = &rgz_src2->hwc_layer;
-        if (rgz_hwc_scaled(hwc_src2))
+        if (is_scaled_layer(hwc_src2))
             OUTE("src2 layer %p has scaling, this is not supported", hwc_src2);
         /*
          * We shouldn't receive a NV12 buffer as src2 at this point, this is an
          * invalid parameter for the blend request
          */
-        if (rgz_is_layer_nv12(hwc_src2))
+        if (is_nv12_layer(hwc_src2))
             OUTE("invalid input layer, src2 layer %p is NV12", hwc_src2);
         e->bp.flags |= rgz_get_flip_flags(hwc_src2->transform, 1);
         int src2_orientation = rgz_get_orientation(hwc_src2->transform);
@@ -756,10 +702,10 @@ static int rgz_out_bvcmd_paint(rgz_t *rgz, rgz_out_params_t *params)
         if (rgz_layer->buffidx == -1) {
             struct bvsurfgeom *scrgeom = params->data.bvc.dstgeom;
             blit_rect_t srcregion;
-            srcregion.left = max(0, l->displayFrame.left);
-            srcregion.top = max(0, l->displayFrame.top);
-            srcregion.bottom = min(scrgeom->height, l->displayFrame.bottom);
-            srcregion.right = min(scrgeom->width, l->displayFrame.right);
+            srcregion.left = MAX(0, l->displayFrame.left);
+            srcregion.top = MAX(0, l->displayFrame.top);
+            srcregion.bottom = MIN(scrgeom->height, l->displayFrame.bottom);
+            srcregion.right = MIN(scrgeom->width, l->displayFrame.right);
             rgz_out_clrdst(params, &srcregion);
             continue;
         }
@@ -797,7 +743,7 @@ static float getscalew(hwc_layer_1_t *layer)
     int h = HEIGHT(layer->sourceCrop);
 
     if (layer->transform & HWC_TRANSFORM_ROT_90)
-        swap(w, h);
+        SWAP(w, h);
 
     return ((float)WIDTH(layer->displayFrame)) / (float)w;
 }
@@ -808,7 +754,7 @@ static float getscaleh(hwc_layer_1_t *layer)
     int h = HEIGHT(layer->sourceCrop);
 
     if (layer->transform & HWC_TRANSFORM_ROT_90)
-        swap(w, h);
+        SWAP(w, h);
 
     return ((float)HEIGHT(layer->displayFrame)) / (float)h;
 }
@@ -878,8 +824,8 @@ static void rgz_gen_blitregions(rgz_t *rgz, blit_hregion_t *hregion, int screen_
     for (l = 0; l < hregion->nlayers; l++) {
         hwc_layer_1_t *layer = &hregion->rgz_layers[l]->hwc_layer;
         /* Make sure the subregion is not outside the boundaries of the screen */
-        offsets[noffsets++] = max(0, layer->displayFrame.left);
-        offsets[noffsets++] = min(layer->displayFrame.right, screen_width);
+        offsets[noffsets++] = MAX(0, layer->displayFrame.left);
+        offsets[noffsets++] = MIN(layer->displayFrame.right, screen_width);
     }
     rgz_bsort(offsets, noffsets);
     noffsets = rgz_bunique(offsets, noffsets);
@@ -910,25 +856,23 @@ static void rgz_gen_blitregions(rgz_t *rgz, blit_hregion_t *hregion, int screen_
     }
 }
 
-static int rgz_hwc_scaled(hwc_layer_1_t *layer)
-{
-    int w = WIDTH(layer->sourceCrop);
-    int h = HEIGHT(layer->sourceCrop);
-
-    if (layer->transform & HWC_TRANSFORM_ROT_90)
-        swap(w, h);
-
-    return WIDTH(layer->displayFrame) != w || HEIGHT(layer->displayFrame) != h;
-}
-
 static int rgz_in_valid_hwc_layer(hwc_layer_1_t *layer)
 {
     IMG_native_handle_t *handle = (IMG_native_handle_t *)layer->handle;
-    if ((layer->flags & HWC_SKIP_LAYER) || !handle)
+    if (layer->flags & HWC_SKIP_LAYER) {
+        ALOGI_IF(debug_trace, "regionizer: layer is invalid due to HWC_SKIP_LAYER flag");
         return 0;
+    }
 
-    if (is_NV12(handle->iFormat))
-        return handle->iFormat == HAL_PIXEL_FORMAT_TI_NV12;
+    if (!handle) {
+        ALOGI_IF(debug_trace, "regionizer: layer is invalid due to NULL handle");
+        return 0;
+    }
+
+    if (is_nv12_format(handle->iFormat)) {
+        ALOGI_IF(debug_trace, "regionizer: layer is valid");
+        return 1;
+    }
 
     /* FIXME: The following must be removed when GC supports vertical/horizontal
      * buffer flips, please note having a FLIP_H and FLIP_V means 180 rotation
@@ -950,8 +894,11 @@ static int rgz_in_valid_hwc_layer(hwc_layer_1_t *layer)
     case HAL_PIXEL_FORMAT_BGRA_8888:
         break;
     default:
+        ALOGI_IF(debug_trace, "regionizer: layer is invalid due to unsupported pixel format %s", HAL_FMT(handle->iFormat));
         return 0;
     }
+
+    ALOGI_IF(debug_trace, "regionizer: layer is valid");
     return 1;
 }
 
@@ -995,10 +942,10 @@ static void rgz_add_to_damaged_area(rgz_in_params_t *params, rgz_layer_t *rgz_la
     /* Clip the layer rectangle to the screen geometry */
     blit_rect_t layer_rect;
     rgz_get_displayframe_rect(layer, &layer_rect);
-    layer_rect.left = max(0, layer_rect.left);
-    layer_rect.top = max(0, layer_rect.top);
-    layer_rect.right = min(screen_rect.right, layer_rect.right);
-    layer_rect.bottom = min(screen_rect.bottom, layer_rect.bottom);
+    layer_rect.left = MAX(0, layer_rect.left);
+    layer_rect.top = MAX(0, layer_rect.top);
+    layer_rect.right = MIN(screen_rect.right, layer_rect.right);
+    layer_rect.bottom = MIN(screen_rect.bottom, layer_rect.bottom);
 
     /* Then add the rectangle to the damage area */
     if (empty_rect(damaged_area)) {
@@ -1009,10 +956,10 @@ static void rgz_add_to_damaged_area(rgz_in_params_t *params, rgz_layer_t *rgz_la
         damaged_area->bottom = layer_rect.bottom;
     } else {
         /* Grow current damaged area */
-        damaged_area->left = min(damaged_area->left, layer_rect.left);
-        damaged_area->top = min(damaged_area->top, layer_rect.top);
-        damaged_area->right = max(damaged_area->right, layer_rect.right);
-        damaged_area->bottom = max(damaged_area->bottom, layer_rect.bottom);
+        damaged_area->left = MIN(damaged_area->left, layer_rect.left);
+        damaged_area->top = MIN(damaged_area->top, layer_rect.top);
+        damaged_area->right = MAX(damaged_area->right, layer_rect.right);
+        damaged_area->bottom = MAX(damaged_area->bottom, layer_rect.bottom);
     }
 }
 
@@ -1191,11 +1138,16 @@ static int rgz_in_hwccheck(rgz_in_params_t *p, rgz_t *rgz)
 
     rgz->state &= ~RGZ_STATE_INIT;
 
-    if (!layers)
+    if (!layers) {
+        ALOGI_IF(debug_trace, "regionizer: skipped blit check due to empty layer list");
         return -1;
+    }
+
 
     /* For debugging */
-    //dump_all(layers, layerno, 0);
+    if (debug) {
+        dump_layers_ext(layers, layerno, 0);
+    }
 
     /*
      * Store buffer index to be sent in the HWC Post2 list. Any overlay
@@ -1203,6 +1155,14 @@ static int rgz_in_hwccheck(rgz_in_params_t *p, rgz_t *rgz)
      */
     int l, memidx = 0;
     for (l = 0; l < layerno; l++) {
+        /*
+         * Workaround: If a NV12 layer is present in the list, don't even try
+         * to blit. There is a performance degradation while playing video and
+         * using GC at the same time.
+         */
+        if (!(layers[l].flags & HWC_SKIP_LAYER) && layers[l].handle && is_nv12_layer(&layers[l]))
+            return -1;
+
         if (layers[l].compositionType == HWC_OVERLAY)
             memidx++;
     }
@@ -1248,7 +1208,13 @@ static int rgz_in_hwccheck(rgz_in_params_t *p, rgz_t *rgz)
         }
     }
 
-    if (!possible_blit || possible_blit != candidates) {
+    if (!possible_blit) {
+        ALOGI_IF(debug_trace, "regionizer: no possible blits found");
+        return -1;
+    }
+
+    if (possible_blit != candidates) {
+        ALOGI_IF(debug_trace, "regionizer: blit number differs from candidate number, some layers were skipped");
         return -1;
     }
 
@@ -1309,8 +1275,8 @@ static int rgz_in_hwc(rgz_in_params_t *p, rgz_t *rgz)
     for (i = 0; i < cur_fb_state->rgz_layerno; i++) {
         hwc_layer_1_t *layer = &cur_fb_state->rgz_layers[i].hwc_layer;
         /* Maintain regions inside display boundaries */
-        yentries[ylen++] = max(0, layer->displayFrame.top);
-        yentries[ylen++] = min(layer->displayFrame.bottom, screen_height);
+        yentries[ylen++] = MAX(0, layer->displayFrame.top);
+        yentries[ylen++] = MIN(layer->displayFrame.bottom, screen_height);
         dispw = dispw > layer->displayFrame.right ? dispw : layer->displayFrame.right;
     }
     rgz_bsort(yentries, ylen);
@@ -1394,7 +1360,6 @@ static void rgz_print_layer(hwc_layer_1_t *l, int idx, int csv)
         case HAL_PIXEL_FORMAT_RGBA_8888:
             e -= snprintf(end - e, e, "rgba"); break;
         case HAL_PIXEL_FORMAT_TI_NV12:
-        case HAL_PIXEL_FORMAT_TI_NV12_PADDED:
             e -= snprintf(end - e, e, "nv12"); break;
         default:
             e -= snprintf(end - e, e, "unknown");
@@ -1472,38 +1437,9 @@ static void rgz_print_layers(hwc_display_contents_1_t* list, int csv)
     }
 }
 
-static int hal_to_ocd(int color)
-{
-    switch(color) {
-    case HAL_PIXEL_FORMAT_BGRA_8888:
-        return OCDFMT_BGRA24;
-    case HAL_PIXEL_FORMAT_BGRX_8888:
-        return OCDFMT_BGR124;
-    case HAL_PIXEL_FORMAT_RGB_565:
-        return OCDFMT_RGB16;
-    case HAL_PIXEL_FORMAT_RGBA_8888:
-        return OCDFMT_RGBA24;
-    case HAL_PIXEL_FORMAT_RGBX_8888:
-        return OCDFMT_RGB124;
-    case HAL_PIXEL_FORMAT_TI_NV12:
-        return OCDFMT_NV12;
-    case HAL_PIXEL_FORMAT_YV12:
-        return OCDFMT_YV12;
-    default:
-        return OCDFMT_UNKNOWN;
-    }
-}
-
 static BVFN_MAP bv_map;
 static BVFN_BLT bv_blt;
 static BVFN_UNMAP bv_unmap;
-
-static int rgz_handle_to_stride(IMG_native_handle_t *h)
-{
-    int bpp = is_NV12(h->iFormat) ? 0 : (h->iFormat == HAL_PIXEL_FORMAT_RGB_565 ? 2 : 4);
-    int stride = ALIGN(h->iWidth, HW_ALIGN) * bpp;
-    return stride;
-}
 
 static int rgz_get_orientation(unsigned int transform)
 {
@@ -1548,13 +1484,13 @@ static int rgz_hwc_layer_blit(rgz_out_params_t *params, rgz_layer_t *rgz_layer)
 static int rgz_can_blend_together(hwc_layer_1_t* src1_layer, hwc_layer_1_t* src2_layer)
 {
     /* If any layer is scaled we cannot blend both layers in one blit */
-    if (rgz_hwc_scaled(src1_layer) || rgz_hwc_scaled(src2_layer))
+    if (is_scaled_layer(src1_layer) || is_scaled_layer(src2_layer))
         return 0;
 
     /* NV12 buffers don't have alpha information on it */
     IMG_native_handle_t *src1_hndl = (IMG_native_handle_t *)src1_layer->handle;
     IMG_native_handle_t *src2_hndl = (IMG_native_handle_t *)src2_layer->handle;
-    if (is_NV12(src1_hndl->iFormat) || is_NV12(src2_hndl->iFormat))
+    if (is_nv12_format(src1_hndl->iFormat) || is_nv12_format(src2_hndl->iFormat))
         return 0;
 
     return 1;
@@ -1659,8 +1595,8 @@ static int rgz_hwc_subregion_blit(blit_hregion_t *hregion, int sidx, rgz_out_par
              * changed on the second blit.
              */
             first_batchflags |= BVBATCH_OP;
-            prev_layer_nv12 = rgz_is_layer_nv12(&rgz_src1->hwc_layer);
-            prev_layer_scaled = rgz_hwc_scaled(&rgz_src1->hwc_layer);
+            prev_layer_nv12 = is_nv12_layer(&rgz_src1->hwc_layer);
+            prev_layer_scaled = is_scaled_layer(&rgz_src1->hwc_layer);
         }
 
         /*
@@ -1695,7 +1631,7 @@ static int rgz_hwc_subregion_blit(blit_hregion_t *hregion, int sidx, rgz_out_par
              * likely changed as well as the scaling mode. Clipping rectangle
              * remains the same as well as destination geometry.
              */
-            int cur_layer_scaled = rgz_hwc_scaled(&rgz_src1->hwc_layer);
+            int cur_layer_scaled = is_scaled_layer(&rgz_src1->hwc_layer);
             if (cur_layer_scaled || prev_layer_scaled) {
                 batchflags |= BVBATCH_DSTRECT_ORIGIN | BVBATCH_DSTRECT_SIZE |
                     BVBATCH_SRC2RECT_ORIGIN | BVBATCH_SRC2RECT_SIZE |
@@ -1709,7 +1645,7 @@ static int rgz_hwc_subregion_blit(blit_hregion_t *hregion, int sidx, rgz_out_par
              * rectangles might have been trasformed to match the rotated
              * destination geometry.
              */
-            int cur_layer_nv12 = rgz_is_layer_nv12(&rgz_src1->hwc_layer);
+            int cur_layer_nv12 = is_nv12_layer(&rgz_src1->hwc_layer);
             if (cur_layer_nv12 || prev_layer_nv12) {
                 batchflags |= BVBATCH_DST | BVBATCH_DSTRECT_ORIGIN | BVBATCH_DSTRECT_SIZE |
                     BVBATCH_SRC2 | BVBATCH_SRC2RECT_ORIGIN | BVBATCH_SRC2RECT_SIZE |
@@ -1944,9 +1880,14 @@ int rgz_get_screengeometry(int fd, struct bvsurfgeom *geom, int fmt)
     geom->width = fb_varinfo.xres;
     geom->height = fb_varinfo.yres;
     geom->virtstride = fb_fixinfo.line_length;
-    geom->format = hal_to_ocd(fmt);
+    geom->format = convert_hal_to_ocd_format(fmt);
     geom->orientation = 0;
     return 0;
+}
+
+void rgz_enable_debug_trace(int enable)
+{
+    debug_trace = enable;
 }
 
 int rgz_in(rgz_in_params_t *p, rgz_t *rgz)
