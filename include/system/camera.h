@@ -198,6 +198,21 @@ enum {
      */
     CAMERA_CMD_SET_VIDEO_BUFFER_COUNT = 10,
 
+    /**
+     * Commands to enable/disable preview histogram
+     *
+     * Based on user's input to enable/disable histogram from the camera
+     * UI, send the appropriate command to the HAL to turn on/off the histogram
+     * stats and start sending the data to the application.
+     */
+    CAMERA_CMD_HISTOGRAM_ON     = 11,
+    CAMERA_CMD_HISTOGRAM_OFF     = 12,
+    CAMERA_CMD_HISTOGRAM_SEND_DATA  = 13,
+    CAMERA_CMD_LONGSHOT_ON = 14,
+    CAMERA_CMD_LONGSHOT_OFF = 15,
+    CAMERA_CMD_METADATA_ON = 100,
+    CAMERA_CMD_METADATA_OFF = 101,
+
 #ifdef OMAP_ENHANCEMENT_VTC
     /**
      * Camera Preview deinitialization.

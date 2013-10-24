@@ -130,3 +130,24 @@ TARGET_KRAIT_BIONIC_PLDSIZE := 64
 
 # Bootanimation
 TARGET_BOOTANIMATION_PRELOAD := true
+
+BOARD_SEPOLICY_DIRS += \
+    device/amazon/omap4-common/sepolicy
+
+BOARD_SEPOLICY_UNION += \
+    bluetooth.te \
+    debuggered.te \
+    file_contexts \
+    device.te \
+    dhcp.te \
+    domain.te \
+    file.te \
+    init_shell.te \
+    mediaserver.te \
+    netd.te \
+    pvrsrvinit.te \
+    rild.te \
+    system.te \
+    tee.te \
+    vold.te
+
