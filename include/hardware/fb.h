@@ -29,7 +29,7 @@
 __BEGIN_DECLS
 
 #define GRALLOC_HARDWARE_FB0 "fb0"
-#ifdef OMAP_ENHANCEMENT_HDMI_FB1
+#ifdef OMAP_ENHANCEMENT_DUAL_DISPLAY
 #define GRALLOC_HARDWARE_FB1 "fb1"
 #endif
 
@@ -154,7 +154,7 @@ typedef struct framebuffer_device_t {
 
 /** convenience API for opening and closing a supported device */
 
-#ifdef OMAP_ENHANCEMENT_HDMI_FB1
+#ifdef OMAP_ENHANCEMENT_DUAL_DISPLAY
 static inline int framebuffer_open(const struct hw_module_t* module,
         struct framebuffer_device_t** device, const char* id) {
     if (!strcmp(GRALLOC_HARDWARE_FB0, id))
