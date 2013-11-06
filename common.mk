@@ -83,7 +83,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     make_ext4fs \
     sdcard \
-    setup_fs
+    setup_fs \
+    e2fsck
 
 # Audio Support
 PRODUCT_PACKAGES += \
