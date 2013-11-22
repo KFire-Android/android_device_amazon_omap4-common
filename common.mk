@@ -61,6 +61,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.crypto.state=unencrypted \
     persist.sys.usb.config=mtp,adb \
     persist.sys.root_access=3 \
+    ro.bq.gpu_to_cpu_unsupported=1
 
 PRODUCT_CHARACTERISTICS := tablet,nosdcard
 
