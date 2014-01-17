@@ -12,5 +12,6 @@
 // control_perms structs with the following:
 #define PROPERTY_PERMS_APPEND \
     { "dolby.audio",      AID_MEDIA,    0 }, \
-    { "dolby.",           AID_SYSTEM,   0 },
+    { "dolby.",           AID_SYSTEM,   0 }, \
+    { "persist.ril.",     AID_RADIO, 0 },
 
