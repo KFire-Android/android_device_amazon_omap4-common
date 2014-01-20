@@ -22,9 +22,6 @@ COMMON_FOLDER := device/amazon/omap4-common
 # set to allow building from omap4-common
 BOARD_VENDOR := amazon
 
-# Setup custom omap4xxx defines
-BOARD_USE_CUSTOM_LIBION := true
-
 ifeq ($(TARGET_PREBUILT_KERNEL),)
 LOCAL_KERNEL := $(DEVICE_FOLDER)/kernel
 else
@@ -71,8 +68,7 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 
 # Rootfs
 PRODUCT_COPY_FILES += \
-    $(LOCAL_KERNEL):kernel \
-    $(COMMON_FOLDER)/default.prop:/root/default.prop \
+    $(LOCAL_KERNEL):kernel
 
 # Wifi
 PRODUCT_PACKAGES += \
@@ -82,6 +78,7 @@ PRODUCT_PACKAGES += \
 # Filesystem management tools
 PRODUCT_PACKAGES += \
     make_ext4fs \
+    e2fsck \
     sdcard \
     setup_fs
 
@@ -111,13 +108,19 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     Email \
 
-#symlinks
-PRODUCT_PACKAGES += \
-    libion.so
-
 # Prebuilts
 PRODUCT_COPY_FILES += \
     $(COMMON_FOLDER)/prebuilt/etc/gps.conf:/system/etc/gps.conf
 
-$(call inherit-product-if-exists, vendor/amazon/omap4-common/omap4-common-vendor.mk)
+# SMC components for secure services like crypto, secure storage
+PRODUCT_PACKAGES += \
+    smc_pa.ift \
+    smc_normal_world_android_cfg.ini \
+    libsmapi.so \
+    libtf_crypto_sst.so \
+    libtfsw_jce_provider.so \
+    tfsw_jce_provider.jar \
+    tfctrl
 
+$(call inherit-product, hardware/ti/omap4xxx/omap4.mk)
+$(call inherit-product-if-exists, vendor/amazon/omap4-common/omap4-common-vendor.mk)
