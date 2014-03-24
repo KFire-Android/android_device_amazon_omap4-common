@@ -60,10 +60,16 @@ static void *vsync_loop(void *data)
 
     for (;;) {
         pthread_mutex_lock(&vsync_mutex);
-        period = vsync_rate; /* re-read rate */
         while (!vsync_loop_active) {
             pthread_cond_wait(&vsync_cond, &vsync_mutex);
         }
+        /* the vsync_rate should be re-read after
+        * user sets the vsync_rate by calling start_sw_vsync
+        * explicitly. This is guaranteed by re-reading it
+        * after the vsync_cond is signalled.
+        */
+        period = vsync_rate; /* re-read rate */
+
         pthread_mutex_unlock(&vsync_mutex);
 
         clock_gettime(CLOCK_MONOTONIC, &tp);
