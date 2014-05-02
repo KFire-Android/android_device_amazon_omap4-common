@@ -51,8 +51,8 @@
 /* MultiMedia1 LP */
 #define PCM_DEVICE_MM_LP	0
 #define PCM_DEVICE_MM		1
-#define PCM_DEVICE_MIC_CAP 	2
-#define PCM_DEVICE_MM2	 	3
+#define PCM_DEVICE_MM2	 	2
+#define PCM_DEVICE_MM_UL 	3
 #define PCM_DEVICE_SCO_OUT 	4
 #define PCM_DEVICE_SCO_IN 	5
 
@@ -60,27 +60,24 @@
 #define PCM_DEVICE_DEFAULT_OUT PCM_DEVICE_MM_LP
 #endif
 #ifndef PCM_DEVICE_DEFAULT_IN
-#define PCM_DEVICE_DEFAULT_IN PCM_DEVICE_MIC_CAP
+#define PCM_DEVICE_DEFAULT_IN PCM_DEVICE_MM_UL
 #endif
 
 #define ABE_BASE_FRAME_COUNT	24
 
 #define SHORT_PERIOD_MULTIPLIER	40  /* 20 ms */
+#define SHORT_PERIOD_SIZE	(ABE_BASE_FRAME_COUNT * SHORT_PERIOD_MULTIPLIER)
+
 #define LONG_PERIOD_MULTIPLIER	2 /* 40 ms */
+#define LONG_PERIOD_SIZE	(SHORT_PERIOD_SIZE * LONG_PERIOD_MULTIPLIER)
 
-#define OUT_SHORT_PERIOD_SIZE	(ABE_BASE_FRAME_COUNT * SHORT_PERIOD_MULTIPLIER)
-#define OUT_SHORT_PERIOD_COUNT	4
-
-#define OUT_LONG_PERIOD_SIZE	(OUT_SHORT_PERIOD_SIZE * LONG_PERIOD_MULTIPLIER)
-#define OUT_LONG_PERIOD_COUNT	4
+#define PLAYBACK_PERIOD_COUNT	4
+#define CAPTURE_PERIOD_COUNT		2
 
 #ifndef OUT_SAMPLING_RATE
-#define OUT_SAMPLING_RATE	48000
+#define OUT_SAMPLING_RATE	44100
 #endif
-
-#define IN_PERIOD_SIZE		OUT_SHORT_PERIOD_SIZE
-#define IN_PERIOD_COUNT		2
-#define IN_SAMPLING_RATE	44100
+#define MM_FULL_POWER_SAMPLING_RATE 48000
 
 #define SCO_PERIOD_SIZE		256
 #define SCO_PERIOD_COUNT	4
@@ -88,33 +85,32 @@
 
 /* minimum sleep time in out_write() when write threshold is not reached */
 #define MIN_WRITE_SLEEP_US 5000
-#define MAX_WRITE_SLEEP_US ((OUT_LONG_PERIOD_SIZE * OUT_LONG_PERIOD_COUNT * 1000000) \
-                                / OUT_SAMPLING_RATE)
 
-enum {
-    OUT_BUFFER_TYPE_UNKNOWN,
-    OUT_BUFFER_TYPE_SHORT,
-    OUT_BUFFER_TYPE_LONG,
-};
+#define RESAMPLER_BUFFER_FRAMES (SHORT_PERIOD_SIZE * 2)
+#define RESAMPLER_BUFFER_SIZE   (4 * RESAMPLER_BUFFER_FRAMES)
 
 struct pcm_config pcm_config_out = {
     .channels = 2,
     .rate = OUT_SAMPLING_RATE,
-    .period_size = OUT_SHORT_PERIOD_SIZE,
-    .period_count = OUT_SHORT_PERIOD_COUNT,
+    .period_size = SHORT_PERIOD_SIZE,
+    .period_count = PLAYBACK_PERIOD_COUNT,
     .format = PCM_FORMAT_S16_LE,
-    .start_threshold = OUT_SHORT_PERIOD_SIZE * 2,
-    .avail_min = OUT_SHORT_PERIOD_SIZE,
+};
+
+struct pcm_config pcm_config_out_lp = {
+    .channels = 2,
+    .rate = OUT_SAMPLING_RATE,
+    .period_size = LONG_PERIOD_SIZE,
+    .period_count = PLAYBACK_PERIOD_COUNT,
+    .format = PCM_FORMAT_S16_LE,
 };
 
 struct pcm_config pcm_config_in = {
     .channels = 2,
-    .rate = IN_SAMPLING_RATE,
-    .period_size = IN_PERIOD_SIZE,
-    .period_count = IN_PERIOD_COUNT,
+    .rate = OUT_SAMPLING_RATE,
+    .period_size = SHORT_PERIOD_SIZE,
+    .period_count = CAPTURE_PERIOD_COUNT,
     .format = PCM_FORMAT_S16_LE,
-    .start_threshold = 1,
-    .stop_threshold = (IN_PERIOD_SIZE * IN_PERIOD_COUNT),
 };
 
 struct pcm_config pcm_config_sco = {
@@ -128,10 +124,10 @@ struct pcm_config pcm_config_sco = {
 struct pcm_config pcm_config_hdmi = {
     .channels = 2,
     .rate = 48000,
-    .period_size = OUT_LONG_PERIOD_SIZE,
-    .period_count = OUT_LONG_PERIOD_COUNT,
+    .period_size = LONG_PERIOD_SIZE,
+    .period_count = PLAYBACK_PERIOD_COUNT,
     .format = PCM_FORMAT_S16_LE,
-    .start_threshold = OUT_LONG_PERIOD_SIZE * 2,
+    .start_threshold = LONG_PERIOD_SIZE * 2,
 };
 
 struct audio_device {
@@ -145,7 +141,6 @@ struct audio_device {
     struct audio_route *ar;
     struct mixer *mixer;
     int orientation;
-    bool screen_off;
     bool low_power;
 
     struct stream_out *active_out;
@@ -157,7 +152,7 @@ struct stream_out {
 
     pthread_mutex_t lock; /* see note below on mutex acquisition order */
     struct pcm *pcm;
-    struct pcm_config *pcm_config;
+    struct pcm_config pcm_config;
     bool standby;
 
     struct resampler_itfe *resampler;
@@ -165,8 +160,7 @@ struct stream_out {
     size_t buffer_frames;
 
     int write_threshold;
-    int cur_write_threshold;
-    int buffer_type;
+    int low_power;
 
     struct audio_device *dev;
 };
@@ -176,14 +170,13 @@ struct stream_in {
 
     pthread_mutex_t lock; /* see note below on mutex acquisition order */
     struct pcm *pcm;
-    struct pcm_config *pcm_config;
+    struct pcm_config pcm_config;
     bool standby;
 
     unsigned int requested_rate;
     struct resampler_itfe *resampler;
     struct resampler_buffer_provider buf_provider;
     int16_t *buffer;
-    size_t buffer_size;
     size_t frames_in;
     int read_status;
 
@@ -277,14 +270,6 @@ static void do_out_standby(struct stream_out *out)
         pcm_close(out->pcm);
         out->pcm = NULL;
         adev->active_out = NULL;
-        if (out->resampler) {
-            release_resampler(out->resampler);
-            out->resampler = NULL;
-        }
-        if (out->buffer) {
-            free(out->buffer);
-            out->buffer = NULL;
-        }
         out->standby = true;
     }
 }
@@ -298,14 +283,6 @@ static void do_in_standby(struct stream_in *in)
         pcm_close(in->pcm);
         in->pcm = NULL;
         adev->active_in = NULL;
-        if (in->resampler) {
-            release_resampler(in->resampler);
-            in->resampler = NULL;
-        }
-        if (in->buffer) {
-            free(in->buffer);
-            in->buffer = NULL;
-        }
         in->standby = true;
     }
 }
@@ -327,16 +304,24 @@ static int start_output_stream(struct stream_out *out)
 #if 0
     if (adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO) {
         device = PCM_DEVICE_SCO_OUT;
-        out->pcm_config = &pcm_config_sco;
+        out->pcm_config = pcm_config_sco;
     } else {
 #endif
     if (adev->out_device & AUDIO_DEVICE_OUT_AUX_DIGITAL) {
         card = PCM_CARD_HDMI;
-        out->pcm_config = &pcm_config_hdmi;
+        out->pcm_config = pcm_config_hdmi;
     } else {
-        device = PCM_DEVICE_DEFAULT_OUT;
-        out->pcm_config = &pcm_config_out;
-        out->buffer_type = OUT_BUFFER_TYPE_LONG; // LP mode
+        if (out->low_power) {
+            out->write_threshold = PLAYBACK_PERIOD_COUNT * LONG_PERIOD_SIZE;
+            out->pcm_config.start_threshold = LONG_PERIOD_SIZE * 2;
+            out->pcm_config.avail_min = LONG_PERIOD_SIZE;
+            device = PCM_DEVICE_MM_LP;
+        } else {
+            /* default to NOT low power */
+            out->write_threshold = PLAYBACK_PERIOD_COUNT * SHORT_PERIOD_SIZE;
+            out->pcm_config.start_threshold = SHORT_PERIOD_SIZE * 2;
+            out->pcm_config.avail_min = SHORT_PERIOD_SIZE;
+        }
     }
 
     /*
@@ -349,16 +334,16 @@ static int start_output_stream(struct stream_out *out)
     if (adev->active_in) {
         struct stream_in *in = adev->active_in;
         pthread_mutex_lock(&in->lock);
-        if (((out->pcm_config->rate % 8000 == 0) &&
-                 (in->pcm_config->rate % 8000) != 0) ||
-                 ((out->pcm_config->rate % 11025 == 0) &&
-                 (in->pcm_config->rate % 11025) != 0))
+        if (((out->pcm_config.rate % 8000 == 0) &&
+                 (in->pcm_config.rate % 8000) != 0) ||
+                 ((out->pcm_config.rate % 11025 == 0) &&
+                 (in->pcm_config.rate % 11025) != 0))
             do_in_standby(in);
         pthread_mutex_unlock(&in->lock);
     }
 
-    ALOGD("pcm_open(%d, %d, PCM_OUT | PCM_MMAP, %p)\n", card, device, out->pcm_config);
-    out->pcm = pcm_open(card, device, PCM_OUT | PCM_MMAP, out->pcm_config);
+    ALOGD("pcm_open(%d, %d, PCM_OUT | PCM_MMAP, %p)\n", card, device, &out->pcm_config);
+    out->pcm = pcm_open(card, device, PCM_OUT | PCM_MMAP, &out->pcm_config);
 
     if (out->pcm && !pcm_is_ready(out->pcm)) {
         ALOGE("pcm_open(out) failed: %s", pcm_get_error(out->pcm));
@@ -366,24 +351,10 @@ static int start_output_stream(struct stream_out *out)
         return -ENOMEM;
     }
 
-    /*
-     * If the stream rate differs from the PCM rate, we need to
-     * create a resampler.
-     */
-    if (out_get_sample_rate(&out->stream.common) != out->pcm_config->rate) {
-        ret = create_resampler(out_get_sample_rate(&out->stream.common),
-                               out->pcm_config->rate,
-                               out->pcm_config->channels,
-                               RESAMPLER_QUALITY_DEFAULT,
-                               NULL,
-                               &out->resampler);
-        out->buffer_frames = (pcm_config_out.period_size * out->pcm_config->rate) /
-                out_get_sample_rate(&out->stream.common) + 1;
-
-        out->buffer = malloc(pcm_frames_to_bytes(out->pcm, out->buffer_frames));
-    }
-
     adev->active_out = out;
+
+    if (out->resampler)
+        out->resampler->reset(out->resampler);
 
     return 0;
 }
@@ -403,10 +374,10 @@ static int start_input_stream(struct stream_in *in)
      */
     if ((adev->in_device - AUDIO_DEVICE_BIT_IN) & (AUDIO_DEVICE_IN_ALL_SCO - AUDIO_DEVICE_BIT_IN)) {
         device = PCM_DEVICE_SCO_IN;
-        in->pcm_config = &pcm_config_sco;
+        in->pcm_config = pcm_config_sco;
     } else {
         device = PCM_DEVICE_DEFAULT_IN;
-        in->pcm_config = &pcm_config_in;
+        in->pcm_config = pcm_config_in;
     }
 
     /*
@@ -419,44 +390,34 @@ static int start_input_stream(struct stream_in *in)
     if (adev->active_out) {
         struct stream_out *out = adev->active_out;
         pthread_mutex_lock(&out->lock);
-        if (((in->pcm_config->rate % 8000 == 0) &&
-                 (out->pcm_config->rate % 8000) != 0) ||
-                 ((in->pcm_config->rate % 11025 == 0) &&
-                 (out->pcm_config->rate % 11025) != 0))
+        if (((in->pcm_config.rate % 8000 == 0) &&
+                 (out->pcm_config.rate % 8000) != 0) ||
+                 ((in->pcm_config.rate % 11025 == 0) &&
+                 (out->pcm_config.rate % 11025) != 0)) {
             do_out_standby(out);
+	}
         pthread_mutex_unlock(&out->lock);
     }
 
-    ALOGD("pcm_open(%d, %d, PCM_IN, %p)\n", card, device, in->pcm_config);
-    in->pcm = pcm_open(card, device, PCM_IN, in->pcm_config);
-
+    ALOGD("pcm_open(%d, %d, PCM_IN, [channels=%d, rate=%d, period_size=%d, period_count=%d, format=%d, start_threshold=%d, stop_threshold=%d])\n",
+        card, device,
+        in->pcm_config.channels, in->pcm_config.rate, in->pcm_config.period_size,
+        in->pcm_config.period_count, in->pcm_config.format, in->pcm_config.start_threshold,
+        in->pcm_config.stop_threshold);
+    in->pcm = pcm_open(card, device, PCM_IN, &in->pcm_config);
     if (in->pcm && !pcm_is_ready(in->pcm)) {
         ALOGE("pcm_open(in) failed: %s", pcm_get_error(in->pcm));
         pcm_close(in->pcm);
         return -ENOMEM;
     }
 
-    /*
-     * If the stream rate differs from the PCM rate, we need to
-     * create a resampler.
-     */
-    if (in_get_sample_rate(&in->stream.common) != in->pcm_config->rate) {
-        in->buf_provider.get_next_buffer = get_next_buffer;
-        in->buf_provider.release_buffer = release_buffer;
-
-        ret = create_resampler(in->pcm_config->rate,
-                               in_get_sample_rate(&in->stream.common),
-                               1,
-                               RESAMPLER_QUALITY_DEFAULT,
-                               &in->buf_provider,
-                               &in->resampler);
-    }
-    in->buffer_size = pcm_frames_to_bytes(in->pcm,
-                                          in->pcm_config->period_size);
-    in->buffer = malloc(in->buffer_size);
-    in->frames_in = 0;
-
     adev->active_in = in;
+
+    /* if no supported sample rate is available, use the resampler */
+    if (in->resampler) {
+        in->resampler->reset(in->resampler);
+        in->frames_in = 0;
+    }
 
     return 0;
 }
@@ -465,6 +426,7 @@ static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
                                    struct resampler_buffer* buffer)
 {
     struct stream_in *in;
+    size_t hw_frame_size;
 
     if (buffer_provider == NULL || buffer == NULL)
         return -EINVAL;
@@ -479,18 +441,19 @@ static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
         return -ENODEV;
     }
 
+    hw_frame_size = audio_stream_frame_size(&in->stream.common);
     if (in->frames_in == 0) {
         in->read_status = pcm_read(in->pcm,
                                    (void*)in->buffer,
-                                   in->buffer_size);
+                                   in->pcm_config.channels * in->pcm_config.period_size * hw_frame_size);
         if (in->read_status != 0) {
             ALOGE("get_next_buffer() pcm_read error %d", in->read_status);
             buffer->raw = NULL;
             buffer->frame_count = 0;
             return in->read_status;
         }
-        in->frames_in = in->pcm_config->period_size;
-        if (in->pcm_config->channels == 2) {
+        in->frames_in = in->pcm_config.period_size;
+        if (in->pcm_config.channels == 2) {
             unsigned int i;
 
             /* Discard right channel */
@@ -501,8 +464,11 @@ static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
 
     buffer->frame_count = (buffer->frame_count > in->frames_in) ?
                                 in->frames_in : buffer->frame_count;
-    buffer->i16 = in->buffer + (in->pcm_config->period_size - in->frames_in);
+    buffer->i16 = in->buffer + (in->pcm_config.period_size - in->frames_in);
 
+    ALOGV("%s(read_size=%d, in->frames_in=%d, in->read_status=%d, buffer->frame_count=%d, in->pcm_config.channels=%d)", __FUNCTION__,
+        in->pcm_config.channels * in->pcm_config.period_size * hw_frame_size,
+        in->frames_in, in->read_status, buffer->frame_count, in->pcm_config.channels);
     return in->read_status;
 
 }
@@ -526,13 +492,16 @@ static void release_buffer(struct resampler_buffer_provider *buffer_provider,
 static ssize_t read_frames(struct stream_in *in, void *buffer, ssize_t frames)
 {
     ssize_t frames_wr = 0;
+    size_t frame_size;
+
+    frame_size = audio_stream_frame_size(&in->stream.common);
 
     while (frames_wr < frames) {
         size_t frames_rd = frames - frames_wr;
         if (in->resampler != NULL) {
             in->resampler->resample_from_provider(in->resampler,
                     (int16_t *)((char *)buffer +
-                            frames_wr * audio_stream_frame_size(&in->stream.common)),
+                            frames_wr * frame_size),
                     &frames_rd);
         } else {
             struct resampler_buffer buf = {
@@ -542,9 +511,9 @@ static ssize_t read_frames(struct stream_in *in, void *buffer, ssize_t frames)
             get_next_buffer(&in->buf_provider, &buf);
             if (buf.raw != NULL) {
                 memcpy((char *)buffer +
-                           frames_wr * audio_stream_frame_size(&in->stream.common),
+                           frames_wr * frame_size,
                         buf.raw,
-                        buf.frame_count * audio_stream_frame_size(&in->stream.common));
+                        buf.frame_count * frame_size);
                 frames_rd = buf.frame_count;
             }
             release_buffer(&in->buf_provider, &buf);
@@ -563,7 +532,7 @@ static ssize_t read_frames(struct stream_in *in, void *buffer, ssize_t frames)
 
 static uint32_t out_get_sample_rate(const struct audio_stream *stream)
 {
-    return pcm_config_out.rate;
+    return OUT_SAMPLING_RATE;
 }
 
 static int out_set_sample_rate(struct audio_stream *stream, uint32_t rate)
@@ -573,8 +542,16 @@ static int out_set_sample_rate(struct audio_stream *stream, uint32_t rate)
 
 static size_t out_get_buffer_size(const struct audio_stream *stream)
 {
-    size_t size = pcm_config_out.period_size * audio_stream_frame_size((struct audio_stream *)stream);
-    ALOGD("out_get_buffer_size::size == %u", size);
+    struct stream_out *out = (struct stream_out *)stream;
+
+    /* take resampling into account and return the closest majoring
+    multiple of 16 frames, as audioflinger expects audio buffers to
+    be a multiple of 16 frames */
+
+    size_t size = (SHORT_PERIOD_SIZE * OUT_SAMPLING_RATE) / out->pcm_config.rate;
+    size = ((size + 15) / 16) * 16;
+    size = size * audio_stream_frame_size((struct audio_stream *)stream);
+    ALOGV("%s(size=%d)", __FUNCTION__, size);
     return size;
 }
 
@@ -640,7 +617,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
                 pthread_mutex_unlock(&out->lock);
             }
 
-            ALOGD("out_set_parameters::adev->out_device == 0x%8x", val);
+            ALOGV("out_set_parameters::adev->out_device == 0x%8x", val);
             adev->out_device = val;
             select_devices(adev);
         }
@@ -659,19 +636,8 @@ static char * out_get_parameters(const struct audio_stream *stream, const char *
 static uint32_t out_get_latency(const struct audio_stream_out *stream)
 {
     struct stream_out *out = (struct stream_out *)stream;
-    struct audio_device *adev = out->dev;
-    size_t period_count;
-
-    pthread_mutex_lock(&adev->lock);
-
-    if (adev->screen_off && !adev->active_in && !(adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO))
-        period_count = OUT_LONG_PERIOD_COUNT;
-    else
-        period_count = OUT_SHORT_PERIOD_COUNT;
-
-    pthread_mutex_unlock(&adev->lock);
-
-    return (pcm_config_out.period_size * period_count * 1000) / pcm_config_out.rate;
+//  return (pcm_config_out.period_size * PLAYBACK_PERIOD_COUNT * 1000) / pcm_config_out.rate;
+    return (SHORT_PERIOD_SIZE * PLAYBACK_PERIOD_COUNT * 1000) / out->pcm_config.rate;
 }
 
 static int out_set_volume(struct audio_stream_out *stream, float left,
@@ -689,8 +655,7 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
     size_t frame_size = audio_stream_frame_size(&out->stream.common);
     int16_t *in_buffer = (int16_t *)buffer;
     size_t in_frames = bytes / frame_size;
-    size_t out_frames;
-    int buffer_type;
+    size_t out_frames = RESAMPLER_BUFFER_SIZE / frame_size;
     int kernel_frames;
     bool sco_on;
 
@@ -711,31 +676,11 @@ do_over:
         }
         out->standby = false;
     }
-    buffer_type = ((adev->screen_off || adev->low_power) && !adev->active_in) ?
-            OUT_BUFFER_TYPE_LONG : OUT_BUFFER_TYPE_SHORT;
     sco_on = (adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO);
     pthread_mutex_unlock(&adev->lock);
 
-    /* detect changes in screen ON/OFF state and adapt buffer size
-     * if needed. Do not change buffer size when routed to SCO device. */
-    if (!sco_on && (buffer_type != out->buffer_type)) {
-        size_t period_count;
-
-        if (buffer_type == OUT_BUFFER_TYPE_LONG)
-            period_count = OUT_LONG_PERIOD_COUNT;
-        else
-            period_count = OUT_SHORT_PERIOD_COUNT;
-
-        out->write_threshold = out->pcm_config->period_size * period_count;
-        /* reset current threshold if exiting standby */
-        if (out->buffer_type == OUT_BUFFER_TYPE_UNKNOWN)
-            out->cur_write_threshold = out->write_threshold;
-        out->buffer_type = buffer_type;
-    }
-
     /* Reduce number of channels, if necessary */
-    if (popcount(out_get_channels(&stream->common)) >
-                 (int)out->pcm_config->channels) {
+    if (popcount(out_get_channels(&stream->common)) > (int)out->pcm_config.channels) {
         unsigned int i;
 
         /* Discard right channel */
@@ -746,12 +691,32 @@ do_over:
         frame_size /= 2;
     }
 
-    /* Change sample rate, if necessary */
-    if (out_get_sample_rate(&stream->common) != out->pcm_config->rate) {
-        out_frames = out->buffer_frames;
+    /*
+     * If the stream rate differs from the PCM rate, we need to
+     * create a resampler.
+     */
+    if (out->pcm_config.rate != OUT_SAMPLING_RATE) {
+        if (!out->resampler) {
+            ret = create_resampler(OUT_SAMPLING_RATE,
+                    MM_FULL_POWER_SAMPLING_RATE,
+                    2,
+                    RESAMPLER_QUALITY_DEFAULT,
+                    NULL,
+                    &out->resampler);
+            if (ret != 0)
+                goto exit;
+            out->buffer = malloc(RESAMPLER_BUFFER_SIZE); /* todo: allow for reallocing */
+            if (!out->buffer) {
+                ret = -ENOMEM;
+                goto exit;
+            }
+        }
+
         out->resampler->resample_from_input(out->resampler,
-                                            in_buffer, &in_frames,
-                                            out->buffer, &out_frames);
+                (int16_t *)in_buffer,
+                &in_frames,
+                (int16_t *)out->buffer,
+                &out_frames);
         in_buffer = out->buffer;
     } else {
         out_frames = in_frames;
@@ -759,65 +724,24 @@ do_over:
 
     if (!sco_on) {
         int total_sleep_time_us = 0;
-        size_t period_size = out->pcm_config->period_size;
+        size_t period_size = out->pcm_config.period_size;
 
-        /* do not allow more than out->cur_write_threshold frames in kernel
-         * pcm driver buffer */
+        /* do not allow more than out->write_threshold frames in kernel pcm driver buffer */
         do {
             struct timespec time_stamp;
-            if (pcm_get_htimestamp(out->pcm,
-                                   (unsigned int *)&kernel_frames,
-                                   &time_stamp) < 0)
+
+            if (pcm_get_htimestamp(out->pcm, (unsigned int *)&kernel_frames, &time_stamp) < 0)
                 break;
             kernel_frames = pcm_get_buffer_size(out->pcm) - kernel_frames;
-
-            if (kernel_frames > out->cur_write_threshold) {
-                int sleep_time_us =
-                    (int)(((int64_t)(kernel_frames - out->cur_write_threshold)
-                                    * 1000000) / out->pcm_config->rate);
-                if (sleep_time_us < MIN_WRITE_SLEEP_US)
-                    break;
-                total_sleep_time_us += sleep_time_us;
-#if 0
-                if (total_sleep_time_us > MAX_WRITE_SLEEP_US) {
-                    ALOGW("out_write() limiting sleep time %d to %d",
-                          total_sleep_time_us, MAX_WRITE_SLEEP_US);
-                    sleep_time_us = MAX_WRITE_SLEEP_US -
-                                        (total_sleep_time_us - sleep_time_us);
-                }
-#endif
-                usleep(sleep_time_us);
+            if (kernel_frames > out->write_threshold) {
+                unsigned long time = (unsigned long)
+                    (((int64_t)(kernel_frames - out->write_threshold) * 1000000) /
+                            MM_FULL_POWER_SAMPLING_RATE);
+                if (time < MIN_WRITE_SLEEP_US)
+                    time = MIN_WRITE_SLEEP_US;
+                usleep(time);
             }
-
-        } while (kernel_frames > out->cur_write_threshold);
-#if 0
-        } while ((kernel_frames > out->cur_write_threshold) &&
-                (total_sleep_time_us <= MAX_WRITE_SLEEP_US));
-#endif
-
-        /* do not allow abrupt changes on buffer size. Increasing/decreasing
-         * the threshold by steps of 1/4th of the buffer size keeps the write
-         * time within a reasonable range during transitions.
-         * Also reset current threshold just above current filling status when
-         * kernel buffer is really depleted to allow for smooth catching up with
-         * target threshold.
-         */
-        if (out->cur_write_threshold > out->write_threshold) {
-            out->cur_write_threshold -= period_size / 4;
-            if (out->cur_write_threshold < out->write_threshold) {
-                out->cur_write_threshold = out->write_threshold;
-            }
-        } else if (out->cur_write_threshold < out->write_threshold) {
-            out->cur_write_threshold += period_size / 4;
-            if (out->cur_write_threshold > out->write_threshold) {
-                out->cur_write_threshold = out->write_threshold;
-            }
-        } else if ((kernel_frames < out->write_threshold) &&
-            ((out->write_threshold - kernel_frames) >
-                (int)(period_size * OUT_SHORT_PERIOD_COUNT))) {
-            out->cur_write_threshold = (kernel_frames / period_size + 1) * period_size;
-            out->cur_write_threshold += period_size / 4;
-        }
+        } while (kernel_frames > out->write_threshold);
     }
 
     ret = pcm_mmap_write(out->pcm, buffer, out_frames * frame_size);
@@ -826,7 +750,8 @@ exit:
 
     if (ret != 0) {
 	ALOGE("out_write(%p) failed: %d\n", stream, ret);
-        unsigned int usecs = bytes * 1000000 / audio_stream_frame_size(&stream->common) / out_get_sample_rate(&stream->common);
+        unsigned int usecs = bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+            out_get_sample_rate(&stream->common);
         ALOGD("usecs delay == %u", usecs);
         if (usecs >= 1000000L)
             usecs = 999999L;
@@ -894,11 +819,11 @@ static size_t in_get_buffer_size(const struct audio_stream *stream)
      * multiple of 16 frames, as audioflinger expects audio buffers to
      * be a multiple of 16 frames
      */
-    size = (in->pcm_config->period_size * in_get_sample_rate(stream)) /
-            in->pcm_config->rate;
+    size = (in->pcm_config.period_size * in_get_sample_rate(stream)) /
+    in->pcm_config.rate;
     size = ((size + 15) / 16) * 16;
-    size *= audio_stream_frame_size((struct audio_stream *)stream);
-    ALOGD("in_get_buffer_size::size == %u", size);
+    size = size * audio_stream_frame_size((struct audio_stream *)stream);
+    ALOGV("in_get_buffer_size::size == %u", size);
     return size;
 }
 
@@ -965,7 +890,7 @@ static int in_set_parameters(struct audio_stream *stream, const char *kvpairs)
                 pthread_mutex_unlock(&in->lock);
             }
 
-            ALOGD("in_set_parameters::adev->in_device == 0x%8x", val);
+            ALOGV("in_set_parameters::adev->in_device == 0x%8x", val);
             adev->in_device = val;
             select_devices(adev);
         }
@@ -1017,7 +942,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
         ret = process_frames(in, buffer, frames_rq);
     } else */if (in->resampler != NULL) {
         ret = read_frames(in, buffer, frames_rq);
-    } else if (in->pcm_config->channels == 2) {
+    } else if (in->pcm_config.channels == 2) {
         /*
          * If the PCM is stereo, capture twice as many frames and
          * discard the right channel.
@@ -1082,12 +1007,24 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     struct stream_out *out;
     int ret;
 
-    ALOGD("%s(%p, 0x%04x, 0x%04x, %d, %p)", __FUNCTION__, dev, devices,
+    ALOGV("%s(%p, 0x%04x, 0x%04x, %d, %p)", __FUNCTION__, dev, devices,
                         config->channel_mask, config->sample_rate, stream_out);
 
     out = (struct stream_out *)calloc(1, sizeof(struct stream_out));
     if (!out)
         return -ENOMEM;
+    if (devices & AUDIO_DEVICE_OUT_ALL_SCO) {
+        ret = create_resampler(OUT_SAMPLING_RATE,
+                MM_FULL_POWER_SAMPLING_RATE,
+                2,
+                RESAMPLER_QUALITY_DEFAULT,
+                NULL,
+                &out->resampler);
+        if (ret != 0)
+            goto err_open;
+        out->buffer = malloc(RESAMPLER_BUFFER_SIZE); /* todo: allow for reallocing */
+    } else
+       out->resampler = NULL;
 
     out->stream.common.get_sample_rate = out_get_sample_rate;
     out->stream.common.set_sample_rate = out_set_sample_rate;
@@ -1108,6 +1045,16 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out->stream.get_next_write_timestamp = out_get_next_write_timestamp;
 
     out->dev = adev;
+
+    if (flags & AUDIO_OUTPUT_FLAG_DEEP_BUFFER) {
+        out->pcm_config = pcm_config_out_lp;
+        out->low_power = 1;
+        ALOGD("opening the low power output at %x", (unsigned int)out);
+    } else {
+        out->pcm_config = pcm_config_out;
+        out->low_power = 0;
+        ALOGD("opening the standard (low-latency) output at %x", (unsigned int)out);
+    }
 
     pthread_mutex_lock(&adev->lock);
     adev->out_device &= ~AUDIO_DEVICE_OUT_ALL;
@@ -1133,7 +1080,16 @@ err_open:
 static void adev_close_output_stream(struct audio_hw_device *dev,
                                      struct audio_stream_out *stream)
 {
+    struct stream_out *out = (struct stream_out *)stream;
     out_standby(&stream->common);
+    if (out->resampler) {
+        release_resampler(out->resampler);
+        out->resampler = NULL;
+    }
+    if (out->buffer) {
+        free(out->buffer);
+        out->buffer = NULL;
+    }
     free(stream);
 }
 
@@ -1179,9 +1135,9 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
     ret = str_parms_get_str(parms, "screen_state", value, sizeof(value));
     if (ret >= 0) {
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0)
-            adev->screen_off = false;
+            adev->low_power = false;
         else
-            adev->screen_off = true;
+            adev->low_power = true;
     }
 
     str_parms_destroy(parms);
@@ -1207,7 +1163,7 @@ static uint32_t adev_get_supported_devices(const struct audio_hw_device *dev)
                 break;
             }
 
-    ALOGD("%s(%p) supported == 0x%8x", __FUNCTION__, dev, supported);
+    ALOGV("%s(%p) supported == 0x%8x", __FUNCTION__, dev, supported);
 
     return supported;
 }
@@ -1277,8 +1233,12 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     struct audio_device *adev = (struct audio_device *)dev;
     struct stream_in *in;
     int ret;
-
+    int channel_count = popcount(config->channel_mask);
+    /*audioflinger expects return variable to be NULL incase of failure */
     *stream_in = NULL;
+
+    ALOGV("%s(dev=%p, devices=0x%04x, format=%d, channel_count=%d, sample_rate=%d, stream_in=%p)", __FUNCTION__, dev,
+        devices, config->format, channel_count, config->sample_rate, stream_in);
 
     /* Respond with a request for mono if a different format is given. */
     if (config->channel_mask != AUDIO_CHANNEL_IN_MONO) {
@@ -1316,10 +1276,45 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     pthread_mutex_unlock(&adev->lock);
 
     in->requested_rate = config->sample_rate;
-    in->pcm_config = &pcm_config_in; /* default PCM config */
+    in->pcm_config = pcm_config_in;
+
+    in->buffer = malloc(in->pcm_config.channels * in->pcm_config.period_size * audio_stream_frame_size(&in->stream.common));
+    ALOGV("%s(buffer_size=%d)", __FUNCTION__,
+       in->pcm_config.channels * in->pcm_config.period_size * audio_stream_frame_size(&in->stream.common));
+    if (!in->buffer) {
+        ret = -ENOMEM;
+        goto err;
+    }
+    in->frames_in = 0;
+
+    if (in->requested_rate != in->pcm_config.rate) {
+        in->buf_provider.get_next_buffer = get_next_buffer;
+        in->buf_provider.release_buffer = release_buffer;
+        ret = create_resampler(in->pcm_config.rate,
+                               in->requested_rate,
+                               1,
+                               RESAMPLER_QUALITY_DEFAULT,
+                               &in->buf_provider,
+                               &in->resampler);
+        if (ret != 0) {
+            ret = -EINVAL;
+            goto err;
+        }
+        ALOGV("%s(create_resampler[pcm_rate=%d, requested_rate=%d])\n",
+            __FUNCTION__,
+            in->pcm_config.rate, in->requested_rate);
+    }
 
     *stream_in = &in->stream;
     return 0;
+
+err:
+    if (in->resampler)
+        release_resampler(in->resampler);
+
+    free(in);
+    *stream_in = NULL;
+    return ret;
 }
 
 static void adev_close_input_stream(struct audio_hw_device *dev,
@@ -1328,6 +1323,14 @@ static void adev_close_input_stream(struct audio_hw_device *dev,
     struct stream_in *in = (struct stream_in *)stream;
 
     in_standby(&stream->common);
+    if (in->resampler) {
+        release_resampler(in->resampler);
+        in->resampler = NULL;
+    }
+    if (in->buffer) {
+        free(in->buffer);
+        in->buffer = NULL;
+    }
     free(stream);
 }
 
@@ -1353,7 +1356,7 @@ static int adev_open(const hw_module_t* module, const char* name,
     struct audio_device *adev;
     int ret;
 
-    ALOGD("%s(%p, %s, %p)", __FUNCTION__, module, name, device);
+    ALOGV("%s(%p, %s, %p)", __FUNCTION__, module, name, device);
 
     if (strcmp(name, AUDIO_HARDWARE_INTERFACE) != 0)
         return -EINVAL;
