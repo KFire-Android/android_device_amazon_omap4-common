@@ -29,6 +29,12 @@ FrameDecoder* DecoderFactory::createDecoderByType(DecoderType type, bool forceSw
     switch (type) {
         case DecoderType_MJPEG: {
 
+#ifndef OMX_CAMERA_ADAPTER
+            /* If OMX Camera Adapter is not used, OMX implementation is not available in the device, switch to sw
+            * decoder
+            */
+            forceSwDecoder = true;
+#endif
             if (!forceSwDecoder) {
                 decoder = new OmxFrameDecoder(DecoderType_MJPEG);
                 CAMHAL_LOGD("Using HW Decoder for MJPEG");
@@ -41,11 +47,13 @@ FrameDecoder* DecoderFactory::createDecoderByType(DecoderType type, bool forceSw
             // And if no - create SW decoder.
             break;
         }
+#ifdef OMX_CAMERA_ADAPTER
         case DecoderType_H264: {
             decoder = new OmxFrameDecoder(DecoderType_H264);
             CAMHAL_LOGD("Using HW Decoder for H264");
             break;
         }
+#endif
         default: {
             CAMHAL_LOGE("Unrecognized decoder type %d", type);
         }

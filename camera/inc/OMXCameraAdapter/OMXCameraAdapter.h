@@ -580,9 +580,6 @@ private:
     status_t setParameter3ABoolInvert(const OMX_INDEXTYPE omx_idx,
                                       const OMX_BOOL data, const char *msg);
     status_t setAlgoExternalGamma(Gen3A_settings& Gen3A);
-
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     status_t setAlgoNSF1(Gen3A_settings& Gen3A);
     status_t setAlgoNSF2(Gen3A_settings& Gen3A);
     status_t setAlgoSharpening(Gen3A_settings& Gen3A);
@@ -592,7 +589,6 @@ private:
     //Gamma table
     void updateGammaTable(const char* gamma);
     status_t setGammaTable(Gen3A_settings& Gen3A);
-#endif
 
     status_t getEVCompensation(Gen3A_settings& Gen3A);
     status_t getWBMode(Gen3A_settings& Gen3A);
@@ -783,14 +779,11 @@ private:
     status_t setMechanicalMisalignmentCorrection(bool enable);
 
     // DCC file data save
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     status_t initDccFileDataSave(OMX_HANDLETYPE* omxHandle, int portIndex);
     status_t sniffDccFileDataSave(OMX_BUFFERHEADERTYPE* pBuffHeader);
     status_t saveDccFileDataSave();
     status_t closeDccFileDataSave();
     status_t fseekDCCuseCasePos(FILE *pFile);
-#endif
     FILE * fopenCameraDCC(const char *dccFolderPath);
     FILE * parseDCCsubDir(DIR *pDir, char *path);
 
@@ -924,9 +917,7 @@ private:
     static const int SENSORID_S5K4E1GA;
     static const int SENSORID_S5K6A1GX03;
     static const int SENSORID_OV8830;
-    static const int SENSORID_OV8820;
     static const int SENSORID_OV2722;
-    static const int SENSORID_MT9M114;
     static const int SENSORID_OV9726;
     static const CapU32 mFacing [];
     static const userToOMX_LUT mAutoConvergence [];
@@ -1210,7 +1201,7 @@ private:
 
     bool mSetFormatDone;
 
-//    OMX_TI_DCCDATATYPE mDccData;
+    OMX_TI_DCCDATATYPE mDccData;
     android::Mutex mDccDataLock;
 
     int mMaxZoomSupported;

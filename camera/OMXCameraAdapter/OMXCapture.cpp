@@ -148,8 +148,6 @@ status_t OMXCameraAdapter::setParametersCapture(const android::CameraParameters 
     }
 
 #ifdef OMAP_ENHANCEMENT
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     str = params.get(TICameraParameters::KEY_TEMP_BRACKETING);
     if ( ( str != NULL ) &&
          ( strcmp(str, android::CameraParameters::TRUE) == 0 ) ) {
@@ -167,32 +165,28 @@ status_t OMXCameraAdapter::setParametersCapture(const android::CameraParameters 
 
         mBracketingSet = false;
     }
-#endif
+
     if ( (str = params.get(TICameraParameters::KEY_EXP_BRACKETING_RANGE)) != NULL ) {
         parseExpRange(str, mExposureBracketingValues, NULL,
                       mExposureGainBracketingModes,
                       EXP_BRACKET_RANGE, mExposureBracketingValidEntries);
-//      if (mCapMode == OMXCameraAdapter::CP_CAM) {
-//          mExposureBracketMode = OMX_BracketVectorShot;
-//      } else {
+        if (mCapMode == OMXCameraAdapter::CP_CAM) {
+            mExposureBracketMode = OMX_BracketVectorShot;
+        } else {
             mExposureBracketMode = OMX_BracketExposureRelativeInEV;
-//      }
+        }
         mPendingCaptureSettings |= SetBurstExpBracket;
-    }
-    else if ( (str = params.get(TICameraParameters::KEY_EXP_GAIN_BRACKETING_RANGE)) != NULL) {
+    } else if ( (str = params.get(TICameraParameters::KEY_EXP_GAIN_BRACKETING_RANGE)) != NULL) {
         parseExpRange(str, mExposureBracketingValues, mExposureGainBracketingValues,
                       mExposureGainBracketingModes,
                       EXP_BRACKET_RANGE, mExposureBracketingValidEntries);
-//      if (mCapMode == OMXCameraAdapter::CP_CAM) {
-//          mExposureBracketMode = OMX_BracketVectorShot;
-//      } else {
+        if (mCapMode == OMXCameraAdapter::CP_CAM) {
+            mExposureBracketMode = OMX_BracketVectorShot;
+        } else {
             mExposureBracketMode = OMX_BracketExposureGainAbsolute;
-//      }
+        }
         mPendingCaptureSettings |= SetBurstExpBracket;
-    }
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
-    else {
+    } else {
         // always set queued shot config in CPCAM mode
         if (mCapMode == OMXCameraAdapter::CP_CAM) {
             mExposureBracketMode = OMX_BracketVectorShot;
@@ -217,7 +211,6 @@ status_t OMXCameraAdapter::setParametersCapture(const android::CameraParameters 
         }
         mZoomBracketingEnabled = false;
     }
-#endif
 #endif
 
     // Flush config queue
@@ -533,11 +526,11 @@ status_t OMXCameraAdapter::doExposureBracketing(int *evValues,
     }
 
     if ( NO_ERROR == ret ) {
-//        if (bracketMode == OMX_BracketVectorShot) {
-//            ret = setVectorShot(evValues, evValues2, evModes2, evCount, frameCount, flush, bracketMode);
-//        } else {
+        if (bracketMode == OMX_BracketVectorShot) {
+            ret = setVectorShot(evValues, evValues2, evModes2, evCount, frameCount, flush, bracketMode);
+        } else {
             ret = setExposureBracketing(evValues, evValues2, evCount, frameCount, bracketMode);
-//        }
+        }
     }
 
     LOG_FUNCTION_NAME_EXIT;
@@ -545,8 +538,6 @@ status_t OMXCameraAdapter::doExposureBracketing(int *evValues,
     return ret;
 }
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
 status_t OMXCameraAdapter::setVectorStop(bool toPreview)
 {
     status_t ret = NO_ERROR;
@@ -762,7 +753,6 @@ status_t OMXCameraAdapter::setVectorShot(int *evValues,
 
     return (ret | Utils::ErrorUtils::omxToAndroidError(eError));
 }
-#endif
 
 status_t OMXCameraAdapter::setExposureBracketing(int *evValues,
                                                  int *evValues2,
@@ -946,7 +936,7 @@ status_t OMXCameraAdapter::doBracketing(OMX_BUFFERHEADERTYPE *pBuffHeader,
             mBracketingBuffersQueued[nextBufferIdx] = true;
             mBracketingBuffersQueuedCount++;
             mLastBracetingBufferIdx = nextBufferIdx;
-            setFrameRefCount((CameraBuffer *)imgCaptureData->mBufferHeader[nextBufferIdx]->pAppPrivate, typeOfFrame, 1);
+            setFrameRefCountByType((CameraBuffer *)imgCaptureData->mBufferHeader[nextBufferIdx]->pAppPrivate, typeOfFrame, 1);
             returnFrame((CameraBuffer *)imgCaptureData->mBufferHeader[nextBufferIdx]->pAppPrivate, typeOfFrame);
             }
         }
@@ -1419,10 +1409,7 @@ status_t OMXCameraAdapter::stopImageCapture()
             }
             mStartCaptureSem.Create(0);
         }
-    }
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
-    else if (CP_CAM == mCapMode) {
+    } else if (CP_CAM == mCapMode) {
         // Reset shot config queue
         OMX_TI_CONFIG_ENQUEUESHOTCONFIGS resetShotConfigs;
         OMX_INIT_STRUCT_PTR(&resetShotConfigs, OMX_TI_CONFIG_ENQUEUESHOTCONFIGS);
@@ -1440,7 +1427,6 @@ status_t OMXCameraAdapter::stopImageCapture()
             CAMHAL_LOGDA("Shot config reset successfully");
         }
     }
-#endif
 
     //Wait here for the capture to be done, in worst case timeout and proceed with cleanup
     mCaptureSem.WaitTimeout(OMX_CAPTURE_TIMEOUT);
@@ -1629,8 +1615,6 @@ status_t OMXCameraAdapter::initInternalBuffers(OMX_U32 portIndex)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     int index = 0;
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     OMX_TI_PARAM_USEBUFFERDESCRIPTOR bufferdesc;
 
     /* Indicate to Ducati that we're planning to use dynamically-mapped buffers */
@@ -1696,15 +1680,11 @@ status_t OMXCameraAdapter::initInternalBuffers(OMX_U32 portIndex)
     CAMHAL_LOGV("Ducati requested too many (>1) internal buffers");
 
     return -EINVAL;
-#endif
-    return NO_ERROR;
 }
 
 status_t OMXCameraAdapter::deinitInternalBuffers(OMX_U32 portIndex)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     OMX_TI_PARAM_USEBUFFERDESCRIPTOR bufferdesc;
 
     OMX_INIT_STRUCT_PTR (&bufferdesc, OMX_TI_PARAM_USEBUFFERDESCRIPTOR);
@@ -1735,8 +1715,6 @@ status_t OMXCameraAdapter::deinitInternalBuffers(OMX_U32 portIndex)
     }
 
     return Utils::ErrorUtils::omxToAndroidError(eError);
-#endif
-    return eError;
 }
 
 status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
@@ -1861,7 +1839,7 @@ status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
                                    mCameraAdapterParameters.mImagePortIndex,
                                    0,
                                    imgCaptureData->mBufSize,
-                                   (OMX_U8*)camera_buffer_get_omx_ptr(&bufArr[index])); // FIXME-HASH: bufArr[index].opaque
+                                   (OMX_U8*)camera_buffer_get_omx_ptr(&bufArr[index]));
 
             CAMHAL_LOGDB("OMX_UseBuffer = 0x%x", eError);
             GOTO_EXIT_IF(( eError != OMX_ErrorNone ), eError);
@@ -1904,20 +1882,17 @@ status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
 
 #endif
 
-// FIXME-HASH: REMOVED FOR NOW
         if (mNextState != LOADED_REPROCESS_CAPTURE_STATE) {
             // Enable WB and vector shot extra data for metadata
             setExtraData(true, mCameraAdapterParameters.mImagePortIndex, OMX_WhiteBalance);
-//            setExtraData(true, mCameraAdapterParameters.mImagePortIndex, OMX_TI_LSCTable);
+            setExtraData(true, mCameraAdapterParameters.mImagePortIndex, OMX_TI_LSCTable);
         }
 
-#if 0
         // CPCam mode only supports vector shot
         // Regular capture is not supported
         if ( (mCapMode == CP_CAM) && (mNextState != LOADED_REPROCESS_CAPTURE_STATE) ) {
             initVectorShot();
         }
-#endif
 
         mCaptureBuffersAvailable.clear();
         for (unsigned int i = 0; i < imgCaptureData->mMaxQueueable; i++ ) {
@@ -1940,8 +1915,6 @@ status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
             }
         }
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     // Choose proper single preview mode for cp capture (reproc or hs)
     if (( NO_ERROR == ret) && (OMXCameraAdapter::CP_CAM == mCapMode)) {
         OMX_TI_CONFIG_SINGLEPREVIEWMODETYPE singlePrevMode;
@@ -1964,7 +1937,6 @@ status_t OMXCameraAdapter::UseBuffersCapture(CameraBuffer * bufArr, int num)
             CAMHAL_LOGDA("single preview mode configured successfully");
         }
     }
-#endif
 
 #if PPM_INSTRUMENTATION || PPM_INSTRUMENTATION_ABS
 
@@ -1988,7 +1960,7 @@ EXIT:
     // TODO: WA: if domx client disables VectShotInfo metadata on the image port, this causes
     // VectShotInfo to be disabled internally on preview port also. Remove setting in OMXCapture
     // setExtraData(false, mCameraAdapterParameters.mImagePortIndex, OMX_TI_VectShotInfo);
-//  setExtraData(false, mCameraAdapterParameters.mImagePortIndex, OMX_TI_LSCTable);
+    setExtraData(false, mCameraAdapterParameters.mImagePortIndex, OMX_TI_LSCTable);
     //Release image buffers
     if ( NULL != mReleaseImageBuffersCallback ) {
         mReleaseImageBuffersCallback(mReleaseData);
@@ -2074,7 +2046,7 @@ status_t OMXCameraAdapter::UseBuffersRawCapture(CameraBuffer *bufArr, int num)
                                 mCameraAdapterParameters.mVideoPortIndex,
                                 0,
                                 mCaptureBuffersLength,
-                                (OMX_U8*)camera_buffer_get_omx_ptr(&bufArr[index])); // FIXME-HASH: bufArr[index].opaque
+                                (OMX_U8*)camera_buffer_get_omx_ptr(&bufArr[index]));
         if (eError != OMX_ErrorNone) {
             CAMHAL_LOGEB("OMX_UseBuffer = 0x%x", eError);
         }

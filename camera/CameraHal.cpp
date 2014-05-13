@@ -142,7 +142,7 @@ CameraHal::SocFamily CameraHal::getSocFamily() {
 }
 
 
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
 static preview_stream_extended_ops_t dummyPreviewStreamExtendedOps = {
 #ifdef OMAP_ENHANCEMENT_CPCAM
     dummy_update_and_get_buffer,
@@ -161,12 +161,12 @@ static preview_stream_extended_ops_t dummyPreviewStreamExtendedOps = {
 
 DisplayAdapter::DisplayAdapter()
 {
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
     mExtendedOps = &dummyPreviewStreamExtendedOps;
 #endif
 }
 
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
 void DisplayAdapter::setExtendedOps(preview_stream_extended_ops_t * extendedOps) {
     mExtendedOps = extendedOps ? extendedOps : &dummyPreviewStreamExtendedOps;
 }
@@ -1879,11 +1879,9 @@ status_t CameraHal::cameraPreviewInitialization()
       return ALREADY_EXISTS;
     }
 
-CAMHAL_LOGDA("10");
     if ( NULL != mCameraAdapter ) {
       ret = mCameraAdapter->setParameters(mParameters);
     }
-CAMHAL_LOGDA("20");
 
     if ((mPreviewStartInProgress == false) && (mDisplayPaused == false)){
       ret = mCameraAdapter->sendCommand(CameraAdapter::CAMERA_QUERY_RESOLUTION_PREVIEW,( int ) &frame);
@@ -2086,7 +2084,7 @@ status_t CameraHal::setPreviewWindow(struct preview_stream_ops *window)
             CAMHAL_ASSERT(0);
         }
         mDisplayAdapter = displayAdapter;
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
         mDisplayAdapter->setExtendedOps(mExtendedPreviewStreamOps);
 #endif
         ret = NO_ERROR;
@@ -4105,7 +4103,7 @@ status_t CameraHal::initialize(CameraProperties::Properties* properties)
     LOG_FUNCTION_NAME;
 
     int sensor_index = 0;
-    const char* sensor_name = "OV9760";
+    const char* sensor_name = NULL;
 
     ///Initialize the event mask used for registering an event provider for AppCallbackNotifier
     ///Currently, registering all events as to be coming from CameraAdapter
@@ -4133,7 +4131,6 @@ status_t CameraHal::initialize(CameraProperties::Properties* properties)
     }
     CAMHAL_LOGDB("Sensor index= %d; Sensor name= %s", sensor_index, sensor_name);
 
-CAMHAL_LOGEA("1");
     if (strcmp(sensor_name, V4L_CAMERA_NAME_USB) == 0) {
 #ifdef V4L_CAMERA_ADAPTER
         mCameraAdapter = V4LCameraAdapter_Factory(sensor_index, this);
@@ -4144,7 +4141,6 @@ CAMHAL_LOGEA("1");
         mCameraAdapter = OMXCameraAdapter_Factory(sensor_index);
 #endif
     }
-CAMHAL_LOGEA("2");
 
     if ( ( NULL == mCameraAdapter ) || (mCameraAdapter->initialize(properties)!=NO_ERROR))
         {
@@ -4152,7 +4148,6 @@ CAMHAL_LOGEA("2");
         mCameraAdapter = NULL;
         goto fail_loop;
         }
-CAMHAL_LOGEA("3");
 
     mCameraAdapter->incStrong(mCameraAdapter);
     mCameraAdapter->registerImageReleaseCallback(releaseImageBuffers, (void *) this);
@@ -4498,6 +4493,9 @@ void CameraHal::insertSupportedParams()
     p.set(android::CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, mCameraProperties->get(CameraProperties::VIDEO_SNAPSHOT_SUPPORTED));
     p.set(TICameraParameters::KEY_MECHANICAL_MISALIGNMENT_CORRECTION_SUPPORTED, mCameraProperties->get(CameraProperties::MECHANICAL_MISALIGNMENT_CORRECTION_SUPPORTED));
     p.set(TICameraParameters::KEY_CAP_MODE_VALUES, mCameraProperties->get(CameraProperties::CAP_MODE_VALUES));
+
+    p.set(android::CameraParameters::KEY_VIDEO_SIZE, mCameraProperties->get(CameraProperties::VIDEO_SIZE));
+    p.set(android::CameraParameters::KEY_SUPPORTED_VIDEO_SIZES, mCameraProperties->get(CameraProperties::SUPPORTED_VIDEO_SIZES));
 
     LOG_FUNCTION_NAME_EXIT;
 

@@ -634,19 +634,19 @@ status_t OMXCameraAdapter::setCaptureMode(OMXCameraAdapter::CaptureMode mode)
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     OMX_CONFIG_CAMOPERATINGMODETYPE camMode;
     OMX_CONFIG_BOOLEANTYPE bCAC;
-//    OMX_TI_CONFIG_SINGLEPREVIEWMODETYPE singlePrevMode;
+    OMX_TI_CONFIG_SINGLEPREVIEWMODETYPE singlePrevMode;
 
     LOG_FUNCTION_NAME;
 
     //CAC is disabled by default
     OMX_INIT_STRUCT_PTR (&bCAC, OMX_CONFIG_BOOLEANTYPE);
-//    OMX_INIT_STRUCT_PTR (&singlePrevMode, OMX_TI_CONFIG_SINGLEPREVIEWMODETYPE);
+    OMX_INIT_STRUCT_PTR (&singlePrevMode, OMX_TI_CONFIG_SINGLEPREVIEWMODETYPE);
     bCAC.bEnabled = OMX_FALSE;
 
-    if ( NO_ERROR == ret ) {
+    if ( NO_ERROR == ret )
+        {
 
         OMX_INIT_STRUCT_PTR (&camMode, OMX_CONFIG_CAMOPERATINGMODETYPE);
-#if 0
         if ( mSensorIndex == OMX_TI_StereoSensor ) {
             if ( OMXCameraAdapter::VIDEO_MODE == mode ) {
                 CAMHAL_LOGDA("Camera mode: STEREO VIDEO");
@@ -655,29 +655,18 @@ status_t OMXCameraAdapter::setCaptureMode(OMXCameraAdapter::CaptureMode mode)
                 CAMHAL_LOGDA("Camera mode: STEREO");
                 camMode.eCamOperatingMode = OMX_CaptureStereoImageCapture;
             }
-        } else
-#endif
-        if ( OMXCameraAdapter::HIGH_SPEED == mode ) {
+        } else if ( OMXCameraAdapter::HIGH_SPEED == mode ) {
             CAMHAL_LOGDA("Camera mode: HIGH SPEED");
             camMode.eCamOperatingMode = OMX_CaptureImageHighSpeedTemporalBracketing;
-        }
-#if 0
-        else if ( OMXCameraAdapter::CP_CAM == mode ) {
+        } else if ( OMXCameraAdapter::CP_CAM == mode ) {
             CAMHAL_LOGDA("Camera mode: CP CAM");
             camMode.eCamOperatingMode = OMX_TI_CPCam;
             // TODO(XXX): Hardcode for now until we implement re-proc pipe
-//            singlePrevMode.eMode = OMX_TI_SinglePreviewMode_ImageCaptureHighSpeed;
-        }
-#endif
-        else if( OMXCameraAdapter::HIGH_QUALITY == mode ) {
+            singlePrevMode.eMode = OMX_TI_SinglePreviewMode_ImageCaptureHighSpeed;
+        } else if( OMXCameraAdapter::HIGH_QUALITY == mode ) {
             CAMHAL_LOGDA("Camera mode: HIGH QUALITY");
             camMode.eCamOperatingMode = OMX_CaptureImageProfileBase;
-        } 
-        else if( OMXCameraAdapter::HIGH_QUALITY_ZSL== mode ) {
-            mode = OMXCameraAdapter::HIGH_QUALITY;
-            CAMHAL_LOGDA("Camera mode: HIGH QUALITY");
-            camMode.eCamOperatingMode = OMX_CaptureImageProfileBase;
-#if 0
+        } else if( OMXCameraAdapter::HIGH_QUALITY_ZSL== mode ) {
             const char* valstr = NULL;
             CAMHAL_LOGDA("Camera mode: HIGH QUALITY_ZSL");
             camMode.eCamOperatingMode = OMX_TI_CaptureImageProfileZeroShutterLag;
@@ -687,40 +676,34 @@ status_t OMXCameraAdapter::setCaptureMode(OMXCameraAdapter::CaptureMode mode)
                 zslHistoryLen.nHistoryLen = 5;
             }
 #endif
-#endif
-        }
-        else if( OMXCameraAdapter::VIDEO_MODE == mode ) {
+
+        } else if( OMXCameraAdapter::VIDEO_MODE == mode ) {
             CAMHAL_LOGDA("Camera mode: VIDEO MODE");
             camMode.eCamOperatingMode = OMX_CaptureVideo;
-        }
-        else if( OMXCameraAdapter::VIDEO_MODE_HQ == mode ) {
-            mode = OMXCameraAdapter::VIDEO_MODE;
-            CAMHAL_LOGDA("Camera mode: VIDEO MODE");
-            camMode.eCamOperatingMode = OMX_CaptureVideo;
-#if 0
+        } else if( OMXCameraAdapter::VIDEO_MODE_HQ == mode ) {
             CAMHAL_LOGDA("Camera mode: VIDEO MODE HQ");
             camMode.eCamOperatingMode = OMX_CaptureHighQualityVideo;
-#endif
-        }
-        else {
+        } else {
             CAMHAL_LOGEA("Camera mode: INVALID mode passed!");
             return BAD_VALUE;
         }
 
-        if( NO_ERROR == ret ) {
+        if( NO_ERROR == ret )
+            {
             eError =  OMX_SetParameter(mCameraAdapterParameters.mHandleComp,
                                        ( OMX_INDEXTYPE ) OMX_IndexCameraOperatingMode,
                                        &camMode);
-            if ( OMX_ErrorNone != eError ) {
+            if ( OMX_ErrorNone != eError )
+                {
                 CAMHAL_LOGEB("Error while configuring camera mode 0x%x", eError);
                 ret = Utils::ErrorUtils::omxToAndroidError(eError);
-            }
-            else {
+                }
+            else
+                {
                 CAMHAL_LOGDA("Camera mode configured successfully");
+                }
             }
-        }
 
-#if 0
         if((NO_ERROR == ret) && (OMXCameraAdapter::CP_CAM == mode)) {
             //Configure Single Preview Mode
             eError =  OMX_SetConfig(mCameraAdapterParameters.mHandleComp,
@@ -733,22 +716,25 @@ status_t OMXCameraAdapter::setCaptureMode(OMXCameraAdapter::CaptureMode mode)
                 CAMHAL_LOGDA("single preview mode configured successfully");
             }
         }
-#endif
 
-        if( NO_ERROR == ret ) {
+
+        if( NO_ERROR == ret )
+            {
             //Configure CAC
             eError =  OMX_SetConfig(mCameraAdapterParameters.mHandleComp,
                                     ( OMX_INDEXTYPE ) OMX_IndexConfigChromaticAberrationCorrection,
                                     &bCAC);
-            if ( OMX_ErrorNone != eError ) {
+            if ( OMX_ErrorNone != eError )
+                {
                 CAMHAL_LOGEB("Error while configuring CAC 0x%x", eError);
                 ret = Utils::ErrorUtils::omxToAndroidError(eError);
-            }
-            else {
+                }
+            else
+                {
                 CAMHAL_LOGDA("CAC configured successfully");
+                }
             }
         }
-    }
 
     LOG_FUNCTION_NAME_EXIT;
 
@@ -1225,8 +1211,6 @@ status_t OMXCameraAdapter::setVFramerate(OMX_U32 minFrameRate, OMX_U32 maxFrameR
 status_t OMXCameraAdapter::setMechanicalMisalignmentCorrection(const bool enable)
 {
     status_t ret = NO_ERROR;
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     OMX_TI_CONFIG_MM mm;
 
@@ -1247,7 +1231,7 @@ status_t OMXCameraAdapter::setMechanicalMisalignmentCorrection(const bool enable
     }
 
     LOG_FUNCTION_NAME_EXIT;
-#endif
+
     return ret;
 }
 

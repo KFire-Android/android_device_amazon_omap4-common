@@ -248,7 +248,7 @@ class Gen3A_settings{
     OMX_BOOL AlgoThreeLinColorMap;
     OMX_BOOL AlgoGIC;
 
-//    OMX_TI_CONFIG_GAMMATABLE_TYPE mGammaTable;
+    OMX_TI_CONFIG_GAMMATABLE_TYPE mGammaTable;
 
 };
 

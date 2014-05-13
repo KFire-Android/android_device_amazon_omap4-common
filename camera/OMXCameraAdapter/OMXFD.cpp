@@ -234,8 +234,7 @@ status_t OMXCameraAdapter::createPreviewMetadata(OMX_BUFFERHEADERTYPE* pBuffHead
                          extraData->nPortIndex,
                          extraData->nVersion);
         } else {
-            // FIXME-HASH: FD spams us constantly
-            // CAMHAL_LOGD("FD extra data not found!");
+            CAMHAL_LOGD("FD extra data not found!");
             return -EINVAL;
         }
 

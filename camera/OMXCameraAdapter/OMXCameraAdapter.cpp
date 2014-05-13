@@ -23,6 +23,9 @@
 
 #include "CameraHal.h"
 #include "OMXCameraAdapter.h"
+#ifndef USES_LEGACY_DOMX_DCC
+#include "OMXDCC.h"
+#endif
 #include "ErrorUtils.h"
 #include "TICameraParameters.h"
 #include <signal.h>
@@ -128,8 +131,7 @@ status_t OMXCameraAdapter::initialize(CameraProperties::Properties* caps)
     mComponentState = OMX_StateLoaded;
 
     CAMHAL_LOGVB("OMX_GetHandle -0x%x sensor_index = %lu", eError, mSensorIndex);
-// FIXME-HASH: REMOVED FOR NOW
-//  initDccFileDataSave(&mCameraAdapterParameters.mHandleComp, mCameraAdapterParameters.mPrevPortIndex);
+    initDccFileDataSave(&mCameraAdapterParameters.mHandleComp, mCameraAdapterParameters.mPrevPortIndex);
 
     eError = OMX_SendCommand(mCameraAdapterParameters.mHandleComp,
                                   OMX_CommandPortDisable,
@@ -383,8 +385,7 @@ status_t OMXCameraAdapter::initialize(CameraProperties::Properties* caps)
     mParameters3A.AlgoSharpening = OMX_TRUE;
     mParameters3A.AlgoThreeLinColorMap = OMX_TRUE;
     mParameters3A.AlgoGIC = OMX_TRUE;
-// FIXME-HASH: REMOVED FOR NOW
-//    memset(&mParameters3A.mGammaTable, 0, sizeof(mParameters3A.mGammaTable));
+    memset(&mParameters3A.mGammaTable, 0, sizeof(mParameters3A.mGammaTable));
 
     LOG_FUNCTION_NAME_EXIT;
     return Utils::ErrorUtils::omxToAndroidError(eError);
@@ -1005,8 +1006,6 @@ status_t OMXCameraAdapter::setupTunnel(uint32_t SliceHeight, uint32_t EncoderHan
         CAMHAL_LOGEB("OMX_SetParameter OMX_IndexParamPortDefinition Error- %x", eError);
     }
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
     //Slice  Configuration
     OMX_TI_PARAM_VTCSLICE VTCSlice;
     OMX_INIT_STRUCT_PTR(&VTCSlice, OMX_TI_PARAM_VTCSLICE);
@@ -1028,7 +1027,6 @@ status_t OMXCameraAdapter::setupTunnel(uint32_t SliceHeight, uint32_t EncoderHan
         CAMHAL_LOGEB("OMX_SetupTunnel returned error: 0x%x", eError);
         return BAD_VALUE;
     }
-#endif
 
     return NO_ERROR;
 }
@@ -2205,8 +2203,7 @@ status_t OMXCameraAdapter::startPreview()
     // Enable all preview mode extra data.
     if ( OMX_ErrorNone == eError) {
         ret |= setExtraData(true, mCameraAdapterParameters.mPrevPortIndex, OMX_AncillaryData);
-// FIXME-HASH: REMOVED FOR NOW
-//      ret |= setExtraData(true, OMX_ALL, OMX_TI_VectShotInfo);
+        ret |= setExtraData(true, OMX_ALL, OMX_TI_VectShotInfo);
 #ifdef CAMERAHAL_OMX_PROFILING
         if ( UNLIKELY( mDebugProfile ) ) {
             ret |= setExtraData(true, OMX_ALL, OMX_TI_ProfilerData);
@@ -3570,8 +3567,7 @@ OMX_ERRORTYPE OMXCameraAdapter::OMXCameraAdapterFillBufferDone(OMX_IN OMX_HANDLE
             }
         }
 
-// FIXME-HASH: REMOVED FOR NOW
-//      sniffDccFileDataSave(pBuffHeader);
+        sniffDccFileDataSave(pBuffHeader);
 
         stat |= advanceZoom();
 
@@ -4131,8 +4127,7 @@ OMXCameraAdapter::OMXCameraAdapter(size_t sensor_index)
     // Initial values
     mTimeSourceDelta = 0;
     onlyOnce = true;
-// FIXME-HASH: REMOVED FOR NOW
-//    mDccData.pData = NULL;
+    mDccData.pData = NULL;
 
     mInitSem.Create(0);
     mFlushSem.Create(0);
@@ -4180,12 +4175,9 @@ OMXCameraAdapter::~OMXCameraAdapter()
     switchToLoaded();
 
     if ( mOmxInitialized ) {
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
         saveDccFileDataSave();
 
         closeDccFileDataSave();
-#endif
         // deinit the OMX
         if ( mComponentState == OMX_StateLoaded || mComponentState == OMX_StateInvalid ) {
             // free the handle for the Camera component
@@ -4397,8 +4389,7 @@ public:
                 return err;
             }
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
+#ifdef OMAP_ENHANCEMENT_CPCAM
             CAMHAL_LOGD("Camera mode: CPCAM ");
             properties->setMode(MODE_CPCAM);
             err = fetchCapabiltiesForMode(OMX_TI_CPCam,
@@ -4469,8 +4460,10 @@ extern "C" status_t OMXCameraAdapter_Capabilities(
         goto EXIT;
     }
 
-//    DCCHandler dcc_handler;
-//    dcc_handler.loadDCC(handler.componentRef());
+#ifndef USES_LEGACY_DOMX_DCC
+    DCCHandler dcc_handler;
+    dcc_handler.loadDCC(handler.componentRef());
+#endif
 
     // Continue selecting sensor and then querying OMX Camera for it's capabilities
     // When sensor select returns an error, we know to break and stop

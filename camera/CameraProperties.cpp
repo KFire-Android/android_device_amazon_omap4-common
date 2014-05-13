@@ -45,26 +45,26 @@ static const char* g_camera_adapters[] = {
 
 CameraProperties::CameraProperties() : mCamerasSupported(0)
 {
-//    LOG_FUNCTION_NAME;
+    LOG_FUNCTION_NAME;
 
     mCamerasSupported = 0;
     mInitialized = 0;
 
-//    LOG_FUNCTION_NAME_EXIT;
+    LOG_FUNCTION_NAME_EXIT;
 }
 
 CameraProperties::~CameraProperties()
 {
-//    LOG_FUNCTION_NAME;
+    LOG_FUNCTION_NAME;
 
-//    LOG_FUNCTION_NAME_EXIT;
+    LOG_FUNCTION_NAME_EXIT;
 }
 
 
 // Initializes the CameraProperties class
 status_t CameraProperties::initialize()
 {
-//    LOG_FUNCTION_NAME;
+    LOG_FUNCTION_NAME;
 
     status_t ret;
 
@@ -79,7 +79,7 @@ status_t CameraProperties::initialize()
         mInitialized = 1;
     }
 
-//    LOG_FUNCTION_NAME_EXIT;
+    LOG_FUNCTION_NAME_EXIT;
 
     return ret;
 }
@@ -90,7 +90,7 @@ extern "C" status_t CameraAdapter_Capabilities(CameraProperties::Properties* pro
 ///Loads all the Camera related properties
 status_t CameraProperties::loadProperties()
 {
-//    LOG_FUNCTION_NAME;
+    LOG_FUNCTION_NAME;
 
     status_t ret = NO_ERROR;
 
@@ -120,14 +120,14 @@ status_t CameraProperties::loadProperties()
     }
 
     CAMHAL_LOGV("mCamerasSupported = %d", mCamerasSupported);
-//    LOG_FUNCTION_NAME_EXIT;
+    LOG_FUNCTION_NAME_EXIT;
     return ret;
 }
 
 // Returns the number of Cameras found
 int CameraProperties::camerasSupported()
 {
-//    LOG_FUNCTION_NAME;
+    LOG_FUNCTION_NAME;
     return mCamerasSupported;
 }
 

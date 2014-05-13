@@ -387,8 +387,6 @@ status_t OMXCameraAdapter::setParameters3A(const android::CameraParameters &para
         }
     }
 
-// FIXME-HASH: REMOVE FOR NOW
-#if 0
 // TI extensions for enable/disable algos
     declareParameter3ABool(params, TICameraParameters::KEY_ALGO_EXTERNAL_GAMMA,
                        mParameters3A.AlgoExternalGamma, SetAlgoExternalGamma, "External Gamma");
@@ -405,15 +403,12 @@ status_t OMXCameraAdapter::setParameters3A(const android::CameraParameters &para
     // Gamma table
     str = params.get(TICameraParameters::KEY_GAMMA_TABLE);
     updateGammaTable(str);
-#endif
 
     LOG_FUNCTION_NAME_EXIT;
 
     return ret;
 }
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
 void OMXCameraAdapter::updateGammaTable(const char* gamma)
 {
     unsigned int plane = 0;
@@ -490,7 +485,6 @@ void OMXCameraAdapter::updateGammaTable(const char* gamma)
         mPending3Asettings |= SetGammaTable;
     }
 }
-#endif
 
 void OMXCameraAdapter::declareParameter3ABool(const android::CameraParameters &params, const char *key,
                                               OMX_BOOL &current_setting, E3ASettingsFlags pending,
@@ -1854,8 +1848,6 @@ status_t OMXCameraAdapter::setParameter3ABool(const OMX_INDEXTYPE omx_idx,
   return Utils::ErrorUtils::omxToAndroidError(eError);
 }
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
 status_t OMXCameraAdapter::setAlgoExternalGamma(Gen3A_settings& Gen3A)
 {
     return setParameter3ABool((OMX_INDEXTYPE) OMX_TI_IndexConfigExternalGamma, Gen3A.AlgoExternalGamma, "External Gamma");
@@ -1946,7 +1938,7 @@ status_t OMXCameraAdapter::setGammaTable(Gen3A_settings& Gen3A)
     }
 
     eError =  OMX_SetConfig(mCameraAdapterParameters.mHandleComp,
-                            (OMX_INDEXTYPE) OMX_TI_IndexConfigGammaTable, bufferlist[0].opaque); // &sharedBuffer
+                            (OMX_INDEXTYPE) OMX_TI_IndexConfigGammaTable, &sharedBuffer);
     if ( OMX_ErrorNone != eError ) {
         CAMHAL_LOGEB("Error while setting Gamma Table configuration 0x%x", eError);
         ret = BAD_VALUE;
@@ -1962,9 +1954,9 @@ EXIT:
     }
 
     LOG_FUNCTION_NAME_EXIT;
+
     return ret;
 }
-#endif
 
 status_t OMXCameraAdapter::apply3Asettings( Gen3A_settings& Gen3A )
 {
@@ -2100,8 +2092,6 @@ status_t OMXCameraAdapter::apply3Asettings( Gen3A_settings& Gen3A )
                   }
                   break;
 
-// FIXME-HASH: REMOVED FOR NOW
-#if 0
                 //TI extensions for enable/disable algos
                 case SetAlgoExternalGamma:
                   {
@@ -2144,7 +2134,6 @@ status_t OMXCameraAdapter::apply3Asettings( Gen3A_settings& Gen3A )
                     ret |= setGammaTable(Gen3A);
                   }
                   break;
-#endif
 
                 default:
                     CAMHAL_LOGEB("this setting (0x%x) is still not supported in CameraAdapter ",

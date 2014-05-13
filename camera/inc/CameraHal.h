@@ -48,11 +48,11 @@
 #include <ui/GraphicBufferMapper.h>
 #include <hal_public.h>
 
-//#ifdef ANDROID_API_JB_MR1_OR_LATER
+#ifdef USE_LIBION_TI
 #include <ion_ti/ion.h>
-//#else
-//#include <ion/ion.h>
-//#endif
+#else
+#include <ion/ion.h>
+#endif
 
 #include "Common.h"
 #include "MessageQueue.h"
@@ -68,8 +68,8 @@
 
 #define MIN_WIDTH           640
 #define MIN_HEIGHT          480
-#define PICTURE_WIDTH   1200	//1296? //3264 /* 5mp - 2560. 8mp - 3280 */ /* Make sure it is a multiple of 16. */
-#define PICTURE_HEIGHT  800	//808?  //2448 /* 5mp - 2048. 8mp - 2464 */ /* Make sure it is a multiple of 16. */
+#define PICTURE_WIDTH   3264 /* 5mp - 2560. 8mp - 3280 */ /* Make sure it is a multiple of 16. */
+#define PICTURE_HEIGHT  2448 /* 5mp - 2048. 8mp - 2464 */ /* Make sure it is a multiple of 16. */
 #define PREVIEW_WIDTH 176
 #define PREVIEW_HEIGHT 144
 #define PIXEL_FORMAT           V4L2_PIX_FMT_UYVY
@@ -117,9 +117,6 @@ extern const char * const kYuvImagesOutputDirPath;
 #define V4L_CAMERA_NAME_USB     "USBCAMERA"
 #define OMX_CAMERA_NAME_OV      "OV5640"
 #define OMX_CAMERA_NAME_SONY    "IMX060"
-#define OMX_CAMERA_NAME_OV8820  "OV8820"
-#define OMX_CAMERA_NAME_OV7739  "OV7739"
-#define OMX_CAMERA_NAME_MT9M114 "MT9M114"
 
 
 ///Forward declarations
@@ -1025,7 +1022,7 @@ class DisplayAdapter : public BufferProvider, public virtual android::RefBase
 public:
     DisplayAdapter();
 
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
     preview_stream_extended_ops_t * extendedOps() const {
         return mExtendedOps;
     }
@@ -1063,7 +1060,7 @@ public:
     virtual bool match(const char * str) { return false; }
 
 private:
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
     preview_stream_extended_ops_t * mExtendedOps;
 #endif
 };
@@ -1431,7 +1428,7 @@ public:
     android::sp<DisplayAdapter> mBufferSourceAdapter_In;
     android::sp<DisplayAdapter> mBufferSourceAdapter_Out;
 
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
     preview_stream_extended_ops_t * mExtendedPreviewStreamOps;
 #endif
 

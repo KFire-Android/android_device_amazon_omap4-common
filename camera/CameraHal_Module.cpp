@@ -524,20 +524,17 @@ int camera_send_command(struct camera_device * device,
 
     ti_dev = (ti_camera_device_t*) device;
 
-#ifdef OMAP_ENHANCEMENT
+#ifdef OMAP_ENHANCEMENT_CPCAM
     if ( cmd == CAMERA_CMD_SETUP_EXTENDED_OPERATIONS ) {
         camera_device_extended_ops_t * const ops = static_cast<camera_device_extended_ops_t*>(
                 camera_cmd_send_command_args_to_pointer(arg1, arg2));
 
-#ifdef OMAP_ENHANCEMENT_CPCAM
         ops->set_extended_preview_ops = camera_set_extended_preview_ops;
         ops->set_buffer_source = camera_set_buffer_source;
         ops->release_buffer_source = camera_release_buffer_source;
         ops->take_picture_with_parameters = camera_take_picture_with_parameters;
         ops->reprocess = camera_reprocess;
         ops->cancel_reprocess = camera_cancel_reprocess;
-#endif
-
         return OK;
     }
 #endif

@@ -91,8 +91,13 @@ CameraBuffer* MemoryManager::allocateBufferList(int width, int height, const cha
         ///1D buffers
         for (int i = 0; i < numBufs; i++) {
             unsigned char *data;
+#ifdef USE_LIBION_TI
             int ret = ion_alloc(mIonFd, size, 0, 1 << ION_HEAP_TYPE_CARVEOUT,
                     &handle);
+#else
+            int ret = ion_alloc(mIonFd, size, 0, 1 << ION_HEAP_TYPE_CARVEOUT, 0,
+                    &handle);
+#endif
             if((ret < 0) || ((int)handle == -ENOMEM)) {
                 ret = ion_alloc_tiler(mIonFd, (size_t)size, 1, TILER_PIXEL_FMT_PAGE,
                 OMAP_ION_HEAP_TILER_MASK, &handle, &stride);

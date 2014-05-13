@@ -51,7 +51,7 @@ const int OMXCameraAdapter::SENSORID_S5K4E1GA = 305;
 const int OMXCameraAdapter::SENSORID_S5K6A1GX03 = 306;
 const int OMXCameraAdapter::SENSORID_OV8830 = 310;
 const int OMXCameraAdapter::SENSORID_OV2722 = 311;
-const int OMXCameraAdapter::SENSORID_OV9726 = 96;
+const int OMXCameraAdapter::SENSORID_OV9726 = 312;
 
 
 const int OMXCameraAdapter::FPS_MIN = 5;
@@ -65,7 +65,6 @@ inline static int androidFromDucatiFrameRate(OMX_U32 frameRate) {
 /**** look up tables to translate OMX Caps to Parameter ****/
 
 const CapResolution OMXCameraAdapter::mImageCapRes [] = {
-#if 0
     { 4416, 3312, "4416x3312" },
     { 4032, 3024, "4032x3024" },
     { 4000, 3000, "4000x3000" },
@@ -95,15 +94,12 @@ const CapResolution OMXCameraAdapter::mImageCapRes [] = {
     { 1280,  720, "1280x720" },
     { 1152,  864, "1152x864" },
     { 1280,  960, "1280x960" },
-#endif
-//    { 1280,  800, "1280x800" },
     { 1024,  768, "1024x768" },
     {  640,  480, "640x480" },
     {  320,  240, "320x240" },
 };
 
 const CapResolution OMXCameraAdapter::mImageCapResSS [] = {
-#if 0
    { 4032*2, 3024, "8064x3024" },
    { 3648*2, 2736, "7296x2736" },
    { 3264*2, 2448, "6528x2448" },
@@ -111,15 +107,13 @@ const CapResolution OMXCameraAdapter::mImageCapResSS [] = {
    { 2048*2, 1536, "4096x1536" },
    { 1600*2, 1200, "3200x1200" },
    { 1280*2,  960, "2560x960" },
-#endif
-//   { 1280*2,  800, "2560x800" },
+   { 1280*2,  720, "2560x720" },
    { 1024*2,  768, "2048x768" },
    {  640*2,  480, "1280x480" },
    {  320*2,  240, "640x240" },
 };
 
 const CapResolution OMXCameraAdapter::mImageCapResTB [] = {
-#if 0
    { 4032, 3024*2, "4032x6048" },
    { 3648, 2736*2, "3648x5472" },
    { 3264, 2448*2, "3264x4896" },
@@ -127,17 +121,14 @@ const CapResolution OMXCameraAdapter::mImageCapResTB [] = {
    { 2048, 1536*2, "2048x3072" },
    { 1600, 1200*2, "1600x2400" },
    { 1280,  960*2, "1280x1920" },
-#endif
-//   { 1280,  800*2, "1280x1600" },
+   { 1280,  720*2, "1280x1440" },
    { 1024,  768*2, "1024x1536" },
    {  640,  480*2, "640x960" },
    {  320,  240*2, "320x480" },
 };
 
 const CapResolution OMXCameraAdapter::mPreviewRes [] = {
-#if 0
     { 1920, 1080, "1920x1080" },
-#endif
     { 1280, 720, "1280x720" },
     { 960, 720, "960x720" },
     { 800, 480, "800x480" },
@@ -155,9 +146,7 @@ const CapResolution OMXCameraAdapter::mPreviewRes [] = {
 
 const CapResolution OMXCameraAdapter::mPreviewPortraitRes [] = {
     //Portrait resolutions
-#if 0
     { 1088, 1920, "1088x1920" },
-#endif
     { 720, 1280, "720x1280" },
     { 480, 800, "480x800" },
     { 576, 720, "576x720" },
@@ -173,9 +162,7 @@ const CapResolution OMXCameraAdapter::mPreviewPortraitRes [] = {
 };
 
 const CapResolution OMXCameraAdapter::mPreviewResSS [] = {
-#if 0
    { 1920*2, 1080, "3840x1080" },
-#endif
    { 1280*2,  720, "2560x720" },
    {  800*2,  480, "1600x480" },
    {  720*2,  576, "1440x576" },
@@ -190,9 +177,7 @@ const CapResolution OMXCameraAdapter::mPreviewResSS [] = {
 };
 
 const CapResolution OMXCameraAdapter::mPreviewResTB [] = {
-#if 0
    { 1920, 1080*2, "1920x2160" },
-#endif
    { 1280,  720*2, "1280x1440" },
    {  800,  480*2, "800x960" },
    {  720,  576*2, "720x1152" },
@@ -246,9 +231,7 @@ const CapCodingFormat OMXCameraAdapter::mImageCodingFormat [] = {
 };
 
 const CapFramerate OMXCameraAdapter::mFramerates [] = {
-#if 0
     { 60, "60" },
-#endif
     { 30, "30" },
     { 24, "24" },
     { 20, "20" },
@@ -1036,19 +1019,20 @@ status_t OMXCameraAdapter::insertFramerates(CameraProperties::Properties* params
     {
         android::Vector<FpsRange> fpsRanges;
 
-#if 0
-        const int minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE,
-                androidFromDucatiFrameRate(caps.xFramerateMin));
-        const int maxFrameRate = min<int>(FPS_MAX * CameraHal::VFR_SCALE,
-                androidFromDucatiFrameRate(caps.xFramerateMax));
-#endif
-        CAMHAL_LOGI("Frame rate range: MinFR (%d, %d), MaxFR (%d, %d)", FPS_MIN * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMin), FPS_MAX * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMax));
-
-        const int minFrameRate = FPS_MIN * CameraHal::VFR_SCALE;
-        const int maxFrameRate = FPS_MAX * CameraHal::VFR_SCALE;
+	// HASH: Fix JEM Amazon Ducati xFramerates which are [1 .. 30] vs [256 .. 7680]
+        int minFrameRate = -1;
+	if (caps.xFramerateMin >= 50)
+		minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMin));
+	else
+		minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMin << 8));
+        int maxFrameRate = -1;
+	if (caps.xFramerateMax >= 50)
+		maxFrameRate = min<int>(FPS_MAX * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMax));
+	else
+		maxFrameRate = min<int>(FPS_MAX * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMax << 8));
 
         if ( minFrameRate > maxFrameRate ) {
-            CAMHAL_LOGE("Invalid frame rate range: [%d .. %d] (%d > %d)", caps.xFramerateMin, caps.xFramerateMax, minFrameRate, maxFrameRate);
+            CAMHAL_LOGE("Invalid frame rate range: [%d .. %d]", caps.xFramerateMin, caps.xFramerateMax);
             return BAD_VALUE;
         }
 
@@ -1106,10 +1090,17 @@ status_t OMXCameraAdapter::insertFramerates(CameraProperties::Properties* params
     {
         android::Vector<FpsRange> fpsRanges;
 
-        const int minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE,
-                androidFromDucatiFrameRate(caps.xFramerateMin));
-        const int maxFrameRate = min<int>(FPS_MAX_EXTENDED * CameraHal::VFR_SCALE,
-                androidFromDucatiFrameRate(caps.xFramerateMax));
+	// HASH: Fix JEM Amazon Ducati xFramerates which are [1 .. 30] vs [256 .. 7680]
+        int minFrameRate = -1;
+	if (caps.xFramerateMin >= 50)
+		minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMin));
+	else
+		minFrameRate = max<int>(FPS_MIN * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMin << 8));
+        int maxFrameRate = -1;
+	if (caps.xFramerateMax >= 50)
+		maxFrameRate = min<int>(FPS_MAX_EXTENDED * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMax));
+	else
+		maxFrameRate = min<int>(FPS_MAX_EXTENDED * CameraHal::VFR_SCALE, androidFromDucatiFrameRate(caps.xFramerateMax << 8));
 
         encodeFrameRates(minFrameRate, maxFrameRate, caps, mFramerates, ARRAY_SIZE(mFramerates), fpsRanges);
 
@@ -1995,6 +1986,8 @@ status_t OMXCameraAdapter::insertDefaults(CameraProperties::Properties* params, 
     }
     params->set(CameraProperties::PREVIEW_FRAME_RATE, def);
 
+    char property[PROPERTY_VALUE_MAX];
+
     params->set(CameraProperties::REQUIRED_PREVIEW_BUFS, DEFAULT_NUM_PREV_BUFS);
     params->set(CameraProperties::REQUIRED_IMAGE_BUFS, DEFAULT_NUM_PIC_BUFS);
     params->set(CameraProperties::SATURATION, DEFAULT_SATURATION);
@@ -2010,13 +2003,14 @@ status_t OMXCameraAdapter::insertDefaults(CameraProperties::Properties* params, 
     params->set(CameraProperties::AUTO_WHITEBALANCE_LOCK, DEFAULT_AWB_LOCK);
     params->set(CameraProperties::HOR_ANGLE, DEFAULT_HOR_ANGLE);
     params->set(CameraProperties::VER_ANGLE, DEFAULT_VER_ANGLE);
-    params->set(CameraProperties::VIDEO_SIZE, DEFAULT_VIDEO_SIZE);
-    params->set(CameraProperties::SENSOR_ORIENTATION, DEFAULT_SENSOR_ORIENTATION);
+    property_get("ro.camera.video_size", property, DEFAULT_VIDEO_SIZE);
+    params->set(CameraProperties::VIDEO_SIZE, property);
+    property_get("ro.camera.sensor_orientation", property, DEFAULT_SENSOR_ORIENTATION);
+    params->set(CameraProperties::SENSOR_ORIENTATION, property);
     params->set(CameraProperties::AUTOCONVERGENCE_MODE, DEFAULT_AUTOCONVERGENCE_MODE);
     params->set(CameraProperties::MANUAL_CONVERGENCE, DEFAULT_MANUAL_CONVERGENCE);
     params->set(CameraProperties::MECHANICAL_MISALIGNMENT_CORRECTION, DEFAULT_MECHANICAL_MISALIGNMENT_CORRECTION_MODE);
 
-    char property[PROPERTY_VALUE_MAX];
     property_get("ro.product.manufacturer",
                  property,
                  DEFAULT_EXIF_MAKE);
@@ -2466,7 +2460,7 @@ status_t OMXCameraAdapter::getCaps(const int sensorId, CameraProperties::Propert
     OMX_INIT_STRUCT_PTR (&sharedBuffer, OMX_TI_CONFIG_SHAREDBUFFER);
     sharedBuffer.nPortIndex = OMX_ALL;
     sharedBuffer.nSharedBuffSize = caps_size;
-    sharedBuffer.pSharedBuff = (OMX_U8 *) caps; // FIXME-HASH: camera_buffer_get_omx_ptr (&bufferlist[0]);
+    sharedBuffer.pSharedBuff = (OMX_U8 *) camera_buffer_get_omx_ptr (&bufferlist[0]);
 
     // Get capabilities from OMX Camera
     eError =  OMX_GetConfig(handle, (OMX_INDEXTYPE) OMX_TI_IndexConfigCamCapabilities, &sharedBuffer);
