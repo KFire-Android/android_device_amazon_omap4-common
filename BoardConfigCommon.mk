@@ -81,6 +81,8 @@ ifdef BOARD_USE_TI_ENHANCED_DOMX
     BOARD_USE_TI_DUCATI_H264_PROFILE := true
     COMMON_GLOBAL_CFLAGS += -DENHANCED_DOMX
     ENHANCED_DOMX := true
+    TI_CUSTOM_DOMX_PATH := $(COMMON_FOLDER)/domx
+    DOMX_PATH := $(COMMON_FOLDER)/domx
 else
     DOMX_PATH := hardware/ti/omap4xxx/domx
 endif

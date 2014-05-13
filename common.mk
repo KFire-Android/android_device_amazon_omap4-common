@@ -119,6 +119,26 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libion.so
 
+# TI OMAP4
+PRODUCT_PACKAGES += \
+    libdomx \
+    libOMX_Core \
+    libOMX.TI.DUCATI1.VIDEO.H264E \
+    libOMX.TI.DUCATI1.VIDEO.H264SVCE \
+    libOMX.TI.DUCATI1.VIDEO.VC1E \
+    libOMX.TI.DUCATI1.VIDEO.MPEG4E \
+    libOMX.TI.DUCATI1.VIDEO.DECODER \
+    libOMX.TI.DUCATI1.VIDEO.DECODER.secure \
+    libOMX.TI.DUCATI1.VIDEO.CAMERA \
+    libOMX.TI.DUCATI1.MISC.SAMPLE \
+    libstagefrighthw \
+    libI420colorconvert \
+    libtiutils_custom \
+    libion_ti \
+    smc_pa_ctrl \
+    tf_daemon \
+    libtf_crypto_sst
+
 # Prebuilts
 PRODUCT_COPY_FILES += \
     $(COMMON_FOLDER)/prebuilt/etc/gps.conf:/system/etc/gps.conf
