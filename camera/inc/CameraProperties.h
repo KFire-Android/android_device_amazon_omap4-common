@@ -35,7 +35,9 @@
 namespace Ti {
 namespace Camera {
 
+#ifndef MAX_CAMERAS_SUPPORTED
 #define MAX_CAMERAS_SUPPORTED 3
+#endif
 #define MAX_SIMUL_CAMERAS_SUPPORTED 1
 #define MAX_PROP_NAME_LENGTH 50
 #define MAX_PROP_VALUE_LENGTH 2048

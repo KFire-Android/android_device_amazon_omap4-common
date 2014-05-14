@@ -805,7 +805,11 @@ int camera_get_camera_info(int camera_id, struct camera_info *info)
         {
             if (strcmp(valstr, TICameraParameters::FACING_FRONT) == 0)
             {
+#ifndef TREAT_FRONT_AS_BACK
                 face_value = CAMERA_FACING_FRONT;
+#else
+                face_value = CAMERA_FACING_BACK;
+#endif
             }
             else if (strcmp(valstr, TICameraParameters::FACING_BACK) == 0)
             {
