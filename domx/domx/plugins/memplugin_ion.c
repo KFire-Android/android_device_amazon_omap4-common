@@ -170,16 +170,16 @@ MEMPLUGIN_ERRORTYPE MemPlugin_ION_Alloc(void *pMemPluginHandle, OMX_U32 nClient,
             {
                //for non default types of allocation - no retry with tiler 1d - throw error
 //STARGO: ducati secure heap is too small, need to allocate from heap
-#if 0
-               DOMX_ERROR("FAILED to allocate secure buffer of size=%d. ret=0x%x",pIonBufferParams->nWidth, ret);
-               eError = MEMPLUGIN_ERROR_NORESOURCES;
-               goto EXIT;
-#endif
-               DOMX_ERROR("FAILED to allocate secure buffer of size=%d. ret=0x%x - trying tiler 1d space",pIonBufferParams->nWidth, ret);
+#ifdef DOMX_LOW_SECURE_HEAP
                pIonBufferParams->eBuffer_type = TILER1D;
                pIonBufferParams->eTiler_format = MEMPLUGIN_TILER_FORMAT_PAGE;
                sIonParams.alloc_flags = OMAP_ION_HEAP_TILER_MASK;
                sIonParams.nAlign = -1;
+#else
+               DOMX_ERROR("FAILED to allocate secure buffer of size=%d. ret=0x%x",pIonBufferParams->nWidth, ret);
+               eError = MEMPLUGIN_ERROR_NORESOURCES;
+               goto EXIT;
+#endif
             }
             else
             {
