@@ -39,7 +39,7 @@
 #include <hardware/audio_effect.h>
 #include <audio_effects/effect_aec.h>
 
-#include "audio_route.h"
+#include <audio_route/audio_route.h>
 
 #define PCM_CARD 0
 #define PCM_CARD_HDMI 1
@@ -47,6 +47,8 @@
 #ifndef PCM_CARD_DEFAULT
 #define PCM_CARD_DEFAULT PCM_CARD
 #endif
+
+#define MIXER_CARD		0
 
 /* MultiMedia1 LP */
 #define PCM_DEVICE_MM_LP	0
@@ -238,7 +240,7 @@ static void select_devices(struct audio_device *adev)
     int out_devices = 0;
     int in_devices = 0;
 
-    reset_mixer_state(adev->ar);
+    audio_route_reset(adev->ar);
 
     for (i = 0; i < (sizeof(dev_names) / sizeof(dev_names[0])); i++)
         if (dev_names[i].output_flag) {
@@ -256,7 +258,7 @@ static void select_devices(struct audio_device *adev)
             }
         }
 
-    update_mixer_state(adev->ar);
+    audio_route_update_mixer(adev->ar);
 
     ALOGV("out_devices == 0x%8x, in_devices == 0x%8x", out_devices, in_devices);
 }
@@ -1150,24 +1152,6 @@ static char * adev_get_parameters(const struct audio_hw_device *dev,
     return strdup("");
 }
 
-static uint32_t adev_get_supported_devices(const struct audio_hw_device *dev)
-{
-    struct audio_device *adev = (struct audio_device *)dev;
-    uint32_t supported = 0;
-    unsigned int i, j;
-
-    for (i = 0; i < adev->ar->num_mixer_paths; i++)
-        for (j = 0; j < (sizeof(dev_names) / sizeof(dev_names[0])); j++)
-            if (strcmp(adev->ar->mixer_path[i].name, dev_names[j].name) == 0) {
-                supported |= dev_names[j].mask;
-                break;
-            }
-
-    ALOGV("%s(%p) supported == 0x%8x", __FUNCTION__, dev, supported);
-
-    return supported;
-}
-
 static int adev_init_check(const struct audio_hw_device *dev)
 {
     return 0;
@@ -1366,11 +1350,10 @@ static int adev_open(const hw_module_t* module, const char* name,
         return -ENOMEM;
 
     adev->hw_device.common.tag = HARDWARE_DEVICE_TAG;
-    adev->hw_device.common.version = AUDIO_DEVICE_API_VERSION_CURRENT;
+    adev->hw_device.common.version = AUDIO_DEVICE_API_VERSION_2_0;
     adev->hw_device.common.module = (struct hw_module_t *) module;
     adev->hw_device.common.close = adev_close;
 
-    adev->hw_device.get_supported_devices = adev_get_supported_devices;
     adev->hw_device.init_check = adev_init_check;
     adev->hw_device.set_voice_volume = adev_set_voice_volume;
     adev->hw_device.set_master_volume = adev_set_master_volume;
@@ -1393,7 +1376,7 @@ static int adev_open(const hw_module_t* module, const char* name,
 	return -EINVAL;
     }
 
-    adev->ar = audio_route_init(adev->mixer);
+    adev->ar = audio_route_init(MIXER_CARD, NULL);
     adev->orientation = ORIENTATION_UNDEFINED;
     adev->out_device = AUDIO_DEVICE_OUT_SPEAKER;
     adev->in_device = AUDIO_DEVICE_IN_BUILTIN_MIC & ~AUDIO_DEVICE_BIT_IN;
