@@ -17,7 +17,9 @@ COMMON_FOLDER := device/amazon/omap4-common
 # set to allow building from omap4-common
 BOARD_VENDOR := amazon
 
+# kernel
 PRODUCT_VENDOR_KERNEL_HEADERS := $(COMMON_FOLDER)/kernel-headers
+TARGET_KERNEL_SELINUX_CONFIG := selinux_defconfig
 
 TARGET_SPECIFIC_HEADER_PATH := $(COMMON_FOLDER)/include
 
