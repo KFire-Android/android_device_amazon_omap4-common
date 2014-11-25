@@ -112,9 +112,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     Email \
 
-#symlinks
+# symlinks and pvr files
 PRODUCT_PACKAGES += \
-    libion.so
+    libion.so \
+    pvrsrvinit \
+    libPVRScopeServices.so
 
 # TI OMAP4
 PRODUCT_PACKAGES += \
