@@ -93,7 +93,8 @@ PRODUCT_PACKAGES += \
     tinycap \
     audio_policy.default \
     audio.a2dp.default \
-    audio.usb.default
+    audio.usb.default \
+    audio.r_submix.default
 
 # DRM
 PRODUCT_PACKAGES += \
