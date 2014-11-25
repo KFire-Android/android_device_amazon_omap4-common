@@ -146,3 +146,7 @@ BOARD_SEPOLICY_UNION += \
     tee.te \
     vold.te
 
+# Include an expanded selection of fonts
+EXTENDED_FONT_FOOTPRINT := true
+
+MALLOC_IMPL := dlmalloc
