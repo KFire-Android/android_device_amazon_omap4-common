@@ -26,8 +26,5 @@
 vendor/lib/hw/gralloc.omap4430.so
 vendor/lib/hw/gralloc.omap4460.so
 vendor/lib/hw/gralloc.omap4470.so
-vendor/bin/pvrsrvinit
-vendor/bin/pvrsrvctl_SGX540_120
-vendor/bin/pvrsrvctl_SGX544_112
 etc/powervr.ini
 
