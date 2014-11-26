@@ -127,25 +127,24 @@ TARGET_BOOTANIMATION_PRELOAD := false
 TARGET_BOOTANIMATION_TEXTURE_CACHE := false
 TARGET_BOOTANIMATION_USE_RGB565 := true
 
-BOARD_SEPOLICY_DIRS += \
-    device/amazon/omap4-common/sepolicy
+#BOARD_SEPOLICY_DIRS += \
+#    device/amazon/omap4-common/sepolicy
 
-BOARD_SEPOLICY_UNION += \
-    bluetooth.te \
-    debuggered.te \
-    file_contexts \
-    device.te \
-    dhcp.te \
-    domain.te \
-    file.te \
-    init_shell.te \
-    mediaserver.te \
-    netd.te \
-    pvrsrvinit.te \
-    rild.te \
-    system.te \
-    tee.te \
-    vold.te
+#BOARD_SEPOLICY_UNION += \
+#    bluetooth.te \
+#    file_contexts \
+#    device.te \
+#    dhcp.te \
+#    domain.te \
+#    file.te \
+#    init_shell.te \
+#    mediaserver.te \
+#    netd.te \
+#    pvrsrvinit.te \
+#    rild.te \
+#    system.te \
+#    tee.te \
+#    vold.te
 
 # Include an expanded selection of fonts
 EXTENDED_FONT_FOOTPRINT := true
