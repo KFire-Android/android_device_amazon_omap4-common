@@ -108,10 +108,6 @@ PRODUCT_PACKAGES += \
     sh \
     libcorkscrew
 
-# Extra apps (not always included by AOSP)
-PRODUCT_PACKAGES += \
-    Email \
-
 # symlinks and pvr files
 PRODUCT_PACKAGES += \
     libion.so \
