@@ -75,7 +75,10 @@ PRODUCT_COPY_FILES += \
 # Wifi
 PRODUCT_PACKAGES += \
     dhcpcd.conf \
-    wpa_supplicant_conf \
+    libwpa_client \
+    hostapd \
+    wpa_supplicant \
+    wpa_supplicant.conf
 
 # Filesystem management tools
 PRODUCT_PACKAGES += \
