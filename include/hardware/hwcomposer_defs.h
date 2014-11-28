@@ -89,7 +89,14 @@ enum {
      * composition type of this layer, then the hwcomposer will allow async
      * position updates to this layer via setCursorPositionAsync().
      */
-    HWC_IS_CURSOR_LAYER = 0x00000002
+    HWC_IS_CURSOR_LAYER = 0x00000002,
+
+    /*
+     * HWC_SCREENSHOT_ANIMATOR_LAYER is set by surfaceflinger to indicate that this
+     * layer is a screenshot animating layer.  HWC uses this info to disable rotation
+     * animation on External Display
+     */
+    HWC_SCREENSHOT_ANIMATOR_LAYER = 0x00000004
 };
 
 /*
@@ -118,8 +125,11 @@ enum {
        cursor overlay hardware. hwcomposer will also all async position updates
        of this layer outside of the normal prepare()/set() loop. Added in
        HWC_DEVICE_API_VERSION_1_4. */
-    HWC_CURSOR_OVERLAY =  5
- };
+    HWC_CURSOR_OVERLAY =  5,
+
+    /* this layer will be handled in the HWC, using a blit engine */
+    HWC_BLIT = 6,
+};
 /*
  * hwc_layer_t::blending values
  */
@@ -194,6 +204,11 @@ enum {
      */
     HWC_DISPLAY_DPI_X                       = 4,
     HWC_DISPLAY_DPI_Y                       = 5,
+    /* Indicates if the display is secure
+     * For HDMI/WFD if the sink supports HDCP, it will be true
+     * Primary panel is always considered secure
+     */
+    HWC_DISPLAY_SECURE                      = 6,
 };
 
 /* Allowed events for hwc_methods::eventControl() */
