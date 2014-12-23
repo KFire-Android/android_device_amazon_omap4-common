@@ -161,6 +161,7 @@ struct stream_out {
     struct pcm *pcm;
     struct pcm_config pcm_config;
     bool standby;
+    uint64_t written; /* total frames written, not cleared when entering standby */
 
     struct resampler_itfe *resampler;
     int16_t *buffer;
@@ -185,6 +186,7 @@ struct stream_in {
     struct resampler_itfe *resampler;
     struct resampler_buffer_provider buf_provider;
     int16_t *buffer;
+    size_t buffer_size;
     size_t frames_in;
     int read_status;
 
@@ -278,6 +280,14 @@ static void do_out_standby(struct stream_out *out)
         pcm_close(out->pcm);
         out->pcm = NULL;
         adev->active_out = NULL;
+        if (out->resampler) {
+            release_resampler(out->resampler);
+            out->resampler = NULL;
+        }
+        if (out->buffer) {
+            free(out->buffer);
+            out->buffer = NULL;
+        }
         out->standby = true;
     }
 }
@@ -291,6 +301,14 @@ static void do_in_standby(struct stream_in *in)
         pcm_close(in->pcm);
         in->pcm = NULL;
         adev->active_in = NULL;
+        if (in->resampler) {
+            release_resampler(in->resampler);
+            in->resampler = NULL;
+        }
+        if (in->buffer) {
+            free(in->buffer);
+            in->buffer = NULL;
+        }
         in->standby = true;
     }
 }
@@ -352,10 +370,26 @@ static int start_output_stream(struct stream_out *out)
         return -ENOMEM;
     }
 
-    adev->active_out = out;
+    /*
+     * If the stream rate differs from the PCM rate, we need to
+     * create a resampler.
+     */
+    ALOGD("check for resampler (%u != %u)\n", out_get_sample_rate(&out->stream.common), out->pcm_config.rate);
+    if (out_get_sample_rate(&out->stream.common) != out->pcm_config.rate) {
+        ALOGD("create_resampler(sample_rate=%d)\n", out_get_sample_rate(&out->stream.common));
+        ret = create_resampler(out_get_sample_rate(&out->stream.common),
+                               out->pcm_config.rate,
+                               out->pcm_config.channels,
+                               RESAMPLER_QUALITY_DEFAULT,
+                               NULL,
+                               &out->resampler);
+        out->buffer_frames = (pcm_config_out.period_size * out->pcm_config.rate) /
+                out_get_sample_rate(&out->stream.common) + 1;
 
-    if (out->resampler)
-        out->resampler->reset(out->resampler);
+        out->buffer = malloc(pcm_frames_to_bytes(out->pcm, out->buffer_frames));
+    }
+
+    adev->active_out = out;
 
     return 0;
 }
@@ -412,13 +446,27 @@ static int start_input_stream(struct stream_in *in)
         return -ENOMEM;
     }
 
-    adev->active_in = in;
-
-    /* if no supported sample rate is available, use the resampler */
-    if (in->resampler) {
-        in->resampler->reset(in->resampler);
-        in->frames_in = 0;
+    /*
+     * If the stream rate differs from the PCM rate, we need to
+     * create a resampler.
+     */
+    if (in_get_sample_rate(&in->stream.common) != in->pcm_config.rate) {
+        in->buf_provider.get_next_buffer = get_next_buffer;
+        in->buf_provider.release_buffer = release_buffer;
+        ALOGD("create_resampler(sample_rate=%d)\n", in_get_sample_rate(&in->stream.common));
+        ret = create_resampler(in->pcm_config.rate,
+                               in_get_sample_rate(&in->stream.common),
+                               1,
+                               RESAMPLER_QUALITY_DEFAULT,
+                               &in->buf_provider,
+                               &in->resampler);
     }
+    in->buffer_size = pcm_frames_to_bytes(in->pcm,
+                                          in->pcm_config.period_size);
+    in->buffer = malloc(in->buffer_size);
+    in->frames_in = 0;
+
+    adev->active_in = in;
 
     return 0;
 }
@@ -442,11 +490,10 @@ static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
         return -ENODEV;
     }
 
-    hw_frame_size = audio_stream_frame_size(&in->stream.common);
     if (in->frames_in == 0) {
         in->read_status = pcm_read(in->pcm,
                                    (void*)in->buffer,
-                                   in->pcm_config.channels * in->pcm_config.period_size * hw_frame_size);
+                                   in->buffer_size);
         if (in->read_status != 0) {
             ALOGE("get_next_buffer() pcm_read error %d", in->read_status);
             buffer->raw = NULL;
@@ -656,7 +703,8 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
     size_t frame_size = audio_stream_frame_size(&out->stream.common);
     int16_t *in_buffer = (int16_t *)buffer;
     size_t in_frames = bytes / frame_size;
-    size_t out_frames = RESAMPLER_BUFFER_SIZE / frame_size;
+    size_t out_frames;
+    int buffer_type;
     int kernel_frames;
     bool sco_on;
 
@@ -711,32 +759,12 @@ do_over:
         frame_size /= 2;
     }
 
-    /*
-     * If the stream rate differs from the PCM rate, we need to
-     * create a resampler.
-     */
-    if (out->pcm_config.rate != OUT_SAMPLING_RATE) {
-        if (!out->resampler) {
-            ret = create_resampler(OUT_SAMPLING_RATE,
-                    MM_FULL_POWER_SAMPLING_RATE,
-                    2,
-                    RESAMPLER_QUALITY_DEFAULT,
-                    NULL,
-                    &out->resampler);
-            if (ret != 0)
-                goto exit;
-            out->buffer = malloc(RESAMPLER_BUFFER_SIZE); /* todo: allow for reallocing */
-            if (!out->buffer) {
-                ret = -ENOMEM;
-                goto exit;
-            }
-        }
-
+    /* Change sample rate, if necessary */
+    if (out_get_sample_rate(&stream->common) != out->pcm_config.rate) {
+        out_frames = out->buffer_frames;
         out->resampler->resample_from_input(out->resampler,
-                (int16_t *)in_buffer,
-                &in_frames,
-                (int16_t *)out->buffer,
-                &out_frames);
+                                            in_buffer, &in_frames,
+                                            out->buffer, &out_frames);
         in_buffer = out->buffer;
     } else {
         out_frames = in_frames;
@@ -1062,18 +1090,6 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out = (struct stream_out *)calloc(1, sizeof(struct stream_out));
     if (!out)
         return -ENOMEM;
-    if (devices & AUDIO_DEVICE_OUT_ALL_SCO) {
-        ret = create_resampler(OUT_SAMPLING_RATE,
-                MM_FULL_POWER_SAMPLING_RATE,
-                2,
-                RESAMPLER_QUALITY_DEFAULT,
-                NULL,
-                &out->resampler);
-        if (ret != 0)
-            goto err_open;
-        out->buffer = malloc(RESAMPLER_BUFFER_SIZE); /* todo: allow for reallocing */
-    } else
-       out->resampler = NULL;
 
     out->stream.common.get_sample_rate = out_get_sample_rate;
     out->stream.common.set_sample_rate = out_set_sample_rate;
@@ -1119,16 +1135,7 @@ err_open:
 static void adev_close_output_stream(struct audio_hw_device *dev __unused,
                                      struct audio_stream_out *stream)
 {
-    struct stream_out *out = (struct stream_out *)stream;
     out_standby(&stream->common);
-    if (out->resampler) {
-        release_resampler(out->resampler);
-        out->resampler = NULL;
-    }
-    if (out->buffer) {
-        free(out->buffer);
-        out->buffer = NULL;
-    }
     free(stream);
 }
 
@@ -1302,43 +1309,8 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     in->requested_rate = config->sample_rate;
     in->pcm_config = pcm_config_in;
 
-    in->buffer = malloc(in->pcm_config.channels * in->pcm_config.period_size * audio_stream_frame_size(&in->stream.common));
-    ALOGV("%s(buffer_size=%d)", __FUNCTION__,
-       in->pcm_config.channels * in->pcm_config.period_size * audio_stream_frame_size(&in->stream.common));
-    if (!in->buffer) {
-        ret = -ENOMEM;
-        goto err;
-    }
-    in->frames_in = 0;
-
-    if (in->requested_rate != in->pcm_config.rate) {
-        in->buf_provider.get_next_buffer = get_next_buffer;
-        in->buf_provider.release_buffer = release_buffer;
-        ret = create_resampler(in->pcm_config.rate,
-                               in->requested_rate,
-                               1,
-                               RESAMPLER_QUALITY_DEFAULT,
-                               &in->buf_provider,
-                               &in->resampler);
-        if (ret != 0) {
-            ret = -EINVAL;
-            goto err;
-        }
-        ALOGV("%s(create_resampler[pcm_rate=%d, requested_rate=%d])\n",
-            __FUNCTION__,
-            in->pcm_config.rate, in->requested_rate);
-    }
-
     *stream_in = &in->stream;
     return 0;
-
-err:
-    if (in->resampler)
-        release_resampler(in->resampler);
-
-    free(in);
-    *stream_in = NULL;
-    return ret;
 }
 
 static void adev_close_input_stream(struct audio_hw_device *dev __unused,
@@ -1347,14 +1319,6 @@ static void adev_close_input_stream(struct audio_hw_device *dev __unused,
     struct stream_in *in = (struct stream_in *)stream;
 
     in_standby(&stream->common);
-    if (in->resampler) {
-        release_resampler(in->resampler);
-        in->resampler = NULL;
-    }
-    if (in->buffer) {
-        free(in->buffer);
-        in->buffer = NULL;
-    }
     free(stream);
 }
 
