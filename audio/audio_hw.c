@@ -143,7 +143,7 @@ struct audio_device {
     struct audio_route *ar;
     struct mixer *mixer;
     int orientation;
-    bool low_power;
+    bool screen_off;
 
     struct stream_out *active_out;
     struct stream_in *active_in;
@@ -162,7 +162,6 @@ struct stream_out {
     size_t buffer_frames;
 
     int write_threshold;
-    int low_power;
 
     struct audio_device *dev;
 };
@@ -313,17 +312,11 @@ static int start_output_stream(struct stream_out *out)
         card = PCM_CARD_HDMI;
         out->pcm_config = pcm_config_hdmi;
     } else {
-        if (out->low_power) {
-            out->write_threshold = PLAYBACK_PERIOD_COUNT * LONG_PERIOD_SIZE;
-            out->pcm_config.start_threshold = LONG_PERIOD_SIZE * 2;
-            out->pcm_config.avail_min = LONG_PERIOD_SIZE;
+        out->write_threshold = PLAYBACK_PERIOD_COUNT * LONG_PERIOD_SIZE;
+        out->pcm_config.start_threshold = LONG_PERIOD_SIZE * 2;
+        out->pcm_config.avail_min = LONG_PERIOD_SIZE;
+        if (adev->screen_off)
             device = PCM_DEVICE_MM_LP;
-        } else {
-            /* default to NOT low power */
-            out->write_threshold = PLAYBACK_PERIOD_COUNT * SHORT_PERIOD_SIZE;
-            out->pcm_config.start_threshold = SHORT_PERIOD_SIZE * 2;
-            out->pcm_config.avail_min = SHORT_PERIOD_SIZE;
-        }
     }
 
     /*
@@ -1049,16 +1042,6 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
 
     out->dev = adev;
 
-    if (flags & AUDIO_OUTPUT_FLAG_DEEP_BUFFER) {
-        out->pcm_config = pcm_config_out_lp;
-        out->low_power = 1;
-        ALOGD("opening the low power output at %x", (unsigned int)out);
-    } else {
-        out->pcm_config = pcm_config_out;
-        out->low_power = 0;
-        ALOGD("opening the standard (low-latency) output at %x", (unsigned int)out);
-    }
-
     pthread_mutex_lock(&adev->lock);
     adev->out_device &= ~AUDIO_DEVICE_OUT_ALL;
     adev->out_device |= devices;
@@ -1138,9 +1121,9 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
     ret = str_parms_get_str(parms, "screen_state", value, sizeof(value));
     if (ret >= 0) {
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0)
-            adev->low_power = false;
+            adev->screen_off = false;
         else
-            adev->low_power = true;
+            adev->screen_off = true;
     }
 
     str_parms_destroy(parms);
