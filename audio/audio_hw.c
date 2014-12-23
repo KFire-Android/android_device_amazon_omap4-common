@@ -581,7 +581,7 @@ static ssize_t read_frames(struct stream_in *in, void *buffer, ssize_t frames)
 
 static uint32_t out_get_sample_rate(const struct audio_stream *stream __unused)
 {
-    return OUT_SAMPLING_RATE;
+    return pcm_config_out.rate;
 }
 
 static int out_set_sample_rate(struct audio_stream *stream __unused, uint32_t rate __unused)
