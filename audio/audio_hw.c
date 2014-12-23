@@ -543,7 +543,7 @@ static ssize_t read_frames(struct stream_in *in, void *buffer, ssize_t frames)
     ssize_t frames_wr = 0;
     size_t frame_size;
 
-    frame_size = audio_stream_frame_size(&in->stream.common);
+    frame_size = audio_stream_in_frame_size(&in->stream);
 
     while (frames_wr < frames) {
         size_t frames_rd = frames - frames_wr;
@@ -591,15 +591,8 @@ static int out_set_sample_rate(struct audio_stream *stream __unused, uint32_t ra
 
 static size_t out_get_buffer_size(const struct audio_stream *stream)
 {
-    struct stream_out *out = (struct stream_out *)stream;
-
-    /* take resampling into account and return the closest majoring
-    multiple of 16 frames, as audioflinger expects audio buffers to
-    be a multiple of 16 frames */
-
-    size_t size = (SHORT_PERIOD_SIZE * OUT_SAMPLING_RATE) / out->pcm_config.rate;
-    size = ((size + 15) / 16) * 16;
-    size = size * audio_stream_frame_size((struct audio_stream *)stream);
+    size_t size = pcm_config_out.period_size *
+                      audio_stream_out_frame_size((const struct audio_stream_out *)stream);
     ALOGV("%s(size=%d)", __FUNCTION__, size);
     return size;
 }
@@ -701,7 +694,7 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
     int ret = 0;
     struct stream_out *out = (struct stream_out *)stream;
     struct audio_device *adev = out->dev;
-    size_t frame_size = audio_stream_frame_size(&out->stream.common);
+    size_t frame_size = audio_stream_out_frame_size((const struct audio_stream_out *)stream);
     int16_t *in_buffer = (int16_t *)buffer;
     size_t in_frames = bytes / frame_size;
     size_t out_frames;
@@ -899,7 +892,7 @@ static size_t in_get_buffer_size(const struct audio_stream *stream)
     size = (in->pcm_config.period_size * in_get_sample_rate(stream)) /
     in->pcm_config.rate;
     size = ((size + 15) / 16) * 16;
-    size = size * audio_stream_frame_size((struct audio_stream *)stream);
+    size = size * audio_stream_in_frame_size(&in->stream);
     ALOGV("in_get_buffer_size::size == %u", size);
     return size;
 }
@@ -995,7 +988,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
     int ret = 0;
     struct stream_in *in = (struct stream_in *)stream;
     struct audio_device *adev = in->dev;
-    size_t frames_rq = bytes / audio_stream_frame_size(&stream->common);
+    size_t frames_rq = bytes / audio_stream_in_frame_size(stream);
 
     /*
      * acquiring hw device mutex systematically is useful if a low
@@ -1048,7 +1041,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
 
 exit:
     if (ret < 0)
-        usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+        usleep(bytes * 1000000 / audio_stream_in_frame_size(stream) /
                in_get_sample_rate(&stream->common));
 
     pthread_mutex_unlock(&in->lock);
