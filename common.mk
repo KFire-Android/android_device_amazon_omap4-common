@@ -31,6 +31,10 @@ else
 LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
 endif
 
+# Rootfs
+PRODUCT_COPY_FILES += \
+    $(COMMON_FOLDER)/init.omap4.rc:/root/init.omap4.rc
+
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/tablet_core_hardware.xml:system/etc/permissions/tablet_core_hardware.xml \
