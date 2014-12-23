@@ -86,7 +86,7 @@
 #define SCO_SAMPLING_RATE	8000
 
 /* minimum sleep time in out_write() when write threshold is not reached */
-#define MIN_WRITE_SLEEP_US 5000
+#define MIN_WRITE_SLEEP_US      2000
 
 #define RESAMPLER_BUFFER_FRAMES (SHORT_PERIOD_SIZE * 2)
 #define RESAMPLER_BUFFER_SIZE   (4 * RESAMPLER_BUFFER_FRAMES)
