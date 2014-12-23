@@ -141,7 +141,6 @@ struct audio_device {
     bool standby;
     bool mic_mute;
     struct audio_route *ar;
-    struct mixer *mixer;
     int orientation;
     bool screen_off;
 
@@ -1315,7 +1314,6 @@ static int adev_close(hw_device_t *device)
     struct audio_device *adev = (struct audio_device *)device;
 
     audio_route_free(adev->ar);
-    mixer_close(adev->mixer);
 
     free(device);
     return 0;
@@ -1355,13 +1353,6 @@ static int adev_open(const hw_module_t* module, const char* name,
     adev->hw_device.open_input_stream = adev_open_input_stream;
     adev->hw_device.close_input_stream = adev_close_input_stream;
     adev->hw_device.dump = adev_dump;
-
-    adev->mixer = mixer_open(PCM_CARD);
-    if (!adev->mixer) {
-        free(adev);
-	ALOGE("Unable to open the mixer, aborting.");
-	return -EINVAL;
-    }
 
     adev->ar = audio_route_init(MIXER_CARD, NULL);
     adev->orientation = ORIENTATION_UNDEFINED;
