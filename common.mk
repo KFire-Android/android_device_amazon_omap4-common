@@ -84,7 +84,10 @@ PRODUCT_PACKAGES += \
     make_ext4fs \
     sdcard \
     setup_fs \
-    e2fsck
+    e2fsck \
+    mkfs.f2fs \
+    fsck.f2fs \
+    fibmap.f2fs
 
 # Audio Support
 PRODUCT_PACKAGES += \
