@@ -678,8 +678,19 @@ static char * out_get_parameters(const struct audio_stream *stream __unused, con
 static uint32_t out_get_latency(const struct audio_stream_out *stream)
 {
     struct stream_out *out = (struct stream_out *)stream;
-//  return (pcm_config_out.period_size * PLAYBACK_PERIOD_COUNT * 1000) / pcm_config_out.rate;
-    return (SHORT_PERIOD_SIZE * PLAYBACK_PERIOD_COUNT * 1000) / out->pcm_config.rate;
+    struct audio_device *adev = out->dev;
+    size_t period_count;
+
+    pthread_mutex_lock(&adev->lock);
+
+    if (adev->screen_off && !adev->active_in && !(adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO))
+        period_count = pcm_config_out_lp.period_count;
+    else
+        period_count = pcm_config_out.period_count;
+
+    pthread_mutex_unlock(&adev->lock);
+
+    return (pcm_config_out.period_size * period_count * 1000) / pcm_config_out.rate;
 }
 
 static int out_set_volume(struct audio_stream_out *stream __unused, float left __unused,
