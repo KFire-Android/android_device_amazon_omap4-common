@@ -361,7 +361,8 @@ static int start_output_stream(struct stream_out *out)
         pthread_mutex_unlock(&in->lock);
     }
 
-    ALOGD("pcm_open(%d, %d, PCM_OUT | PCM_MMAP, %p)\n", card, device, &out->pcm_config);
+    ALOGD("pcm_open(%d, %d, config=[rate=%u, channels=%u, period_size=%u, period_count=%u])\n", card, device,
+          out->pcm_config.rate, out->pcm_config.channels, out->pcm_config.period_size, out->pcm_config.period_count);
     out->pcm = pcm_open(card, device, PCM_OUT | PCM_MMAP, &out->pcm_config);
 
     if (out->pcm && !pcm_is_ready(out->pcm)) {
