@@ -26,6 +26,12 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_SRC_FILES := \
 	audio_hw.c
 
+ifneq ($(BOARD_AUDIO_HW_CONFIG_DIR),)
+LOCAL_C_INCLUDES += $(BOARD_AUDIO_HW_CONFIG_DIR)
+else
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/audio/config
+endif
+
 LOCAL_C_INCLUDES += \
 	external/tinyalsa/include \
 	system/media/audio_route/include \

@@ -41,96 +41,10 @@
 
 #include <audio_route/audio_route.h>
 
-#define PCM_CARD 0
-#define PCM_CARD_HDMI 1
-
-#ifndef PCM_CARD_DEFAULT
-#define PCM_CARD_DEFAULT PCM_CARD
-#endif
-
-#define MIXER_CARD		0
-
-/* MultiMedia1 LP */
-#define PCM_DEVICE_MM_LP	0
-#define PCM_DEVICE_MM		1
-#define PCM_DEVICE_MM2	 	2
-#define PCM_DEVICE_MM_UL 	3
-#define PCM_DEVICE_SCO_OUT 	4
-#define PCM_DEVICE_SCO_IN 	5
-
-#ifndef PCM_DEVICE_DEFAULT_OUT
-#define PCM_DEVICE_DEFAULT_OUT PCM_DEVICE_MM_LP
-#endif
-#ifndef PCM_DEVICE_DEFAULT_IN
-#define PCM_DEVICE_DEFAULT_IN PCM_DEVICE_MM_UL
-#endif
-
-#define ABE_BASE_FRAME_COUNT	24
-
-#define SHORT_PERIOD_MULTIPLIER	40  /* 20 ms */
-#define SHORT_PERIOD_SIZE	(ABE_BASE_FRAME_COUNT * SHORT_PERIOD_MULTIPLIER)
-
-#define LONG_PERIOD_MULTIPLIER	2 /* 40 ms */
-#define LONG_PERIOD_SIZE	(SHORT_PERIOD_SIZE * LONG_PERIOD_MULTIPLIER)
-
-#define PLAYBACK_PERIOD_COUNT	4
-#define CAPTURE_PERIOD_COUNT		2
-
-#ifndef OUT_SAMPLING_RATE
-#define OUT_SAMPLING_RATE	44100
-#endif
-#define MM_FULL_POWER_SAMPLING_RATE 48000
-
-#define SCO_PERIOD_SIZE		256
-#define SCO_PERIOD_COUNT	4
-#define SCO_SAMPLING_RATE	8000
-
 /* minimum sleep time in out_write() when write threshold is not reached */
 #define MIN_WRITE_SLEEP_US      2000
 
-#define RESAMPLER_BUFFER_FRAMES (SHORT_PERIOD_SIZE * 2)
-#define RESAMPLER_BUFFER_SIZE   (4 * RESAMPLER_BUFFER_FRAMES)
-
-struct pcm_config pcm_config_out = {
-    .channels = 2,
-    .rate = OUT_SAMPLING_RATE,
-    .period_size = SHORT_PERIOD_SIZE,
-    .period_count = PLAYBACK_PERIOD_COUNT,
-    .format = PCM_FORMAT_S16_LE,
-};
-
-struct pcm_config pcm_config_out_lp = {
-    .channels = 2,
-    .rate = OUT_SAMPLING_RATE,
-    .period_size = LONG_PERIOD_SIZE,
-    .period_count = PLAYBACK_PERIOD_COUNT,
-    .format = PCM_FORMAT_S16_LE,
-};
-
-struct pcm_config pcm_config_in = {
-    .channels = 2,
-    .rate = OUT_SAMPLING_RATE,
-    .period_size = SHORT_PERIOD_SIZE,
-    .period_count = CAPTURE_PERIOD_COUNT,
-    .format = PCM_FORMAT_S16_LE,
-};
-
-struct pcm_config pcm_config_sco = {
-    .channels = 1,
-    .rate = SCO_SAMPLING_RATE,
-    .period_size = SCO_PERIOD_SIZE,
-    .period_count = SCO_PERIOD_COUNT,
-    .format = PCM_FORMAT_S16_LE,
-};
-
-struct pcm_config pcm_config_hdmi = {
-    .channels = 2,
-    .rate = 48000,
-    .period_size = LONG_PERIOD_SIZE,
-    .period_count = PLAYBACK_PERIOD_COUNT,
-    .format = PCM_FORMAT_S16_LE,
-    .start_threshold = LONG_PERIOD_SIZE * 2,
-};
+#include <audio_hw_config.h>
 
 enum {
     OUT_BUFFER_TYPE_UNKNOWN,
