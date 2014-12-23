@@ -26,23 +26,17 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_SRC_FILES := \
 	audio_hw.c
 
+ifneq ($(BOARD_AUDIO_HW_CONFIG_DIR),)
+LOCAL_C_INCLUDES += $(BOARD_AUDIO_HW_CONFIG_DIR)
+else
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/audio/config
+endif
+
 LOCAL_C_INCLUDES += \
 	external/tinyalsa/include \
 	system/media/audio_route/include \
 	$(call include-path-for, audio-utils) \
 	$(call include-path-for, audio-effects)
-
-ifdef BOARD_AUDIO_PCM_DEVICE_DEFAULT_OUT
-    LOCAL_CFLAGS += -DPCM_DEVICE_DEFAULT_OUT=$(BOARD_AUDIO_PCM_DEVICE_DEFAULT_OUT)
-endif
-
-ifdef BOARD_AUDIO_PCM_DEVICE_DEFAULT_IN
-    LOCAL_CFLAGS += -DPCM_DEVICE_DEFAULT_IN=$(BOARD_AUDIO_PCM_DEVICE_DEFAULT_IN)
-endif
-
-ifdef BOARD_AUDIO_OUT_SAMPLING_RATE
-    LOCAL_CFLAGS += -DOUT_SAMPLING_RATE=$(BOARD_AUDIO_OUT_SAMPLING_RATE)
-endif
 
 LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudio-resampler libaudioroute
 LOCAL_MODULE_TAGS := optional

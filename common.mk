@@ -31,6 +31,10 @@ else
 LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
 endif
 
+# Rootfs
+PRODUCT_COPY_FILES += \
+    $(COMMON_FOLDER)/init.omap4.rc:/root/init.omap4.rc
+
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/tablet_core_hardware.xml:system/etc/permissions/tablet_core_hardware.xml \
@@ -47,6 +51,7 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
     $(call add-to-product-copy-files-if-exists,packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml)
 
+# Device settings
 PRODUCT_PROPERTY_OVERRIDES += \
     wifi.interface=wlan0 \
     wifi.supplicant_scan_interval=120 \
@@ -54,10 +59,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
     com.ti.omap_enhancement=true \
     omap.enhancement=true \
     ro.crypto.state=unencrypted \
+    persist.lab126.chargeprotect=1 \
     persist.sys.usb.config=mtp,adb \
     persist.sys.root_access=3 \
     ro.bq.gpu_to_cpu_unsupported=1 \
-    media.stagefright.cache-params=18432/20480/15
+    media.stagefright.cache-params=18432/20480/15 \
+    ro.ksm.default=1 \
+    camera2.portability.force_api=1
 
 PRODUCT_CHARACTERISTICS := tablet,nosdcard
 
@@ -84,7 +92,10 @@ PRODUCT_PACKAGES += \
     make_ext4fs \
     sdcard \
     setup_fs \
-    e2fsck
+    e2fsck \
+    mkfs.f2fs \
+    fsck.f2fs \
+    fibmap.f2fs
 
 # Audio Support
 PRODUCT_PACKAGES += \
