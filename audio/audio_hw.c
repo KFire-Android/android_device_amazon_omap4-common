@@ -738,7 +738,7 @@ do_over:
         } while (kernel_frames > out->write_threshold);
     }
 
-    ret = pcm_mmap_write(out->pcm, buffer, out_frames * frame_size);
+    ret = pcm_mmap_write(out->pcm, in_buffer, out_frames * frame_size);
 
 exit:
 
