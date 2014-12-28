@@ -16,7 +16,9 @@ on init
 on fs
     # pvr module
     insmod /system/lib/modules/pvrsrvkm_sgx540_120.ko
+    insmod /system/lib/modules/pvrsrvkm_sgx544_112.ko
     insmod /system/lib/modules/omaplfb_sgx540_120.ko
+    insmod /system/lib/modules/omaplfb_sgx544_112.ko
     start pvrsrvinit
 
     # change permissions for ION driver
