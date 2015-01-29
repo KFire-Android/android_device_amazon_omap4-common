@@ -59,6 +59,7 @@ LOCAL_C_INCLUDES += \
 	external/tinyalsa/include \
 	system/media/audio_utils/include \
 	system/media/audio_effects/include \
+	frameworks/native/include/media/openmax \
         $(DOMX_PATH)/omx_core/inc
 
 LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libdl

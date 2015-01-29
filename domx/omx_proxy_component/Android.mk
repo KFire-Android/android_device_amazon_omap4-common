@@ -13,7 +13,8 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../domx/omx_rpc/inc \
 	hardware/libhardware/include \
 	$(COMMON_FOLDER)/hwc/ \
-	$(LOCAL_PATH)/../domx/plugins/inc/
+	$(LOCAL_PATH)/../domx/plugins/inc/ \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -51,7 +52,8 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../mm_osal/inc \
 	$(LOCAL_PATH)/../domx \
 	$(LOCAL_PATH)/../domx/omx_rpc/inc \
-	$(LOCAL_PATH)/../domx/plugins/inc/
+	$(LOCAL_PATH)/../domx/plugins/inc/ \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -83,7 +85,8 @@ LOCAL_C_INCLUDES += \
 	$(COMMON_FOLDER)/libion_ti \
 	$(LOCAL_PATH)/../domx/omx_rpc/inc \
 	$(LOCAL_PATH)/../domx/plugins/inc/ \
-	$(LOCAL_PATH)/omx_camera/inc/
+	$(LOCAL_PATH)/omx_camera/inc/ \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -125,7 +128,8 @@ LOCAL_C_INCLUDES += \
 	frameworks/native/include/media/stagefright \
 	frameworks/native/include/media/hardware \
 	$(LOCAL_PATH)/../domx/plugins/inc/ \
-    $(LOCAL_PATH)/omx_video_enc/inc
+	$(LOCAL_PATH)/omx_video_enc/inc \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -163,7 +167,8 @@ LOCAL_C_INCLUDES += \
 	frameworks/native/include/media/stagefright \
 	frameworks/native/include/media/hardware \
 	$(LOCAL_PATH)/../domx/plugins/inc/ \
-    $(LOCAL_PATH)/omx_video_enc/inc
+	$(LOCAL_PATH)/omx_video_enc/inc \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -201,7 +206,8 @@ LOCAL_C_INCLUDES += \
 	frameworks/native/include/media/stagefright \
 	frameworks/native/include/media/hardware \
 	$(LOCAL_PATH)/../domx/plugins/inc/ \
-    $(LOCAL_PATH)/omx_video_enc/inc
+	$(LOCAL_PATH)/omx_video_enc/inc \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -239,7 +245,8 @@ LOCAL_C_INCLUDES += \
 	frameworks/base/include/media/stagefright \
 	frameworks/native/include/media/hardware \
 	$(LOCAL_PATH)/../domx/plugins/inc/ \
-    $(LOCAL_PATH)/omx_video_enc/inc
+	$(LOCAL_PATH)/omx_video_enc/inc \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -273,7 +280,8 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../domx/omx_rpc/inc \
 	hardware/libhardware/include \
 	$(COMMON_FOLDER)/hwc/ \
-	$(LOCAL_PATH)/../domx/plugins/inc/
+	$(LOCAL_PATH)/../domx/plugins/inc/ \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
@@ -309,7 +317,8 @@ LOCAL_C_INCLUDES += \
 	frameworks/native/include/media/stagefright \
 	frameworks/native/include/media/hardware \
 	$(LOCAL_PATH)/../domx/plugins/inc/ \
-	$(LOCAL_PATH)/omx_video_enc/inc
+	$(LOCAL_PATH)/omx_video_enc/inc \
+	frameworks/native/include/media/openmax
 
 LOCAL_SHARED_LIBRARIES := \
 	libmm_osal \
