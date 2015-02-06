@@ -14,14 +14,14 @@
 
 COMMON_FOLDER := device/amazon/omap4-common
 
+# inherit from omap4
+-include hardware/ti/omap4-next/BoardConfigCommon.mk
+
 # set to allow building from omap4-common
 BOARD_VENDOR := amazon
 
 # kernel
-PRODUCT_VENDOR_KERNEL_HEADERS := $(COMMON_FOLDER)/kernel-headers
 TARGET_KERNEL_SELINUX_CONFIG := selinux_defconfig
-
-TARGET_SPECIFIC_HEADER_PATH := $(COMMON_FOLDER)/include
 
 # This variable is set first, so it can be overridden
 # by BoardConfigVendor.mk
@@ -29,27 +29,6 @@ BOARD_USES_GENERIC_AUDIO := false
 
 # Bluetooth
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(COMMON_FOLDER)/bluetooth
-
-# Setup custom omap4xxx defines
-BOARD_USE_CUSTOM_LIBION := true
-
-# TI Enhancement Settings (Part 1)
-OMAP_ENHANCEMENT := true
-#OMAP_ENHANCEMENT_BURST_CAPTURE := true
-#OMAP_ENHANCEMENT_S3D := true
-#OMAP_ENHANCEMENT_CPCAM := true
-#OMAP_ENHANCEMENT_VTC := true
-OMAP_ENHANCEMENT_MULTIGPU := true
-BOARD_USE_TI_ENHANCED_DOMX := true
-
-# Processor
-TARGET_CPU_ABI := armeabi-v7a
-TARGET_CPU_VARIANT := cortex-a9
-TARGET_CPU_ABI2 := armeabi
-TARGET_CPU_SMP := true
-TARGET_ARCH := arm
-TARGET_BOARD_PLATFORM := omap4
-TARGET_ARCH_VARIANT := armv7-a-neon
 
 # Kernel
 BOARD_KERNEL_BASE := 0x80000000
@@ -65,9 +44,6 @@ BOARD_VOLD_EMMC_SHARES_DEV_MAJOR := true
 ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=0
 ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=1
 
-# Graphics
-USE_OPENGL_RENDERER := true
-
 # Recovery
 BOARD_HAS_NO_SELECT_BUTTON := true
 BOARD_HAS_LARGE_FILESYSTEM := true
@@ -80,57 +56,8 @@ ifneq (,$(strip $(wildcard bootable/recovery-twrp/twrp.cpp)))
 RECOVERY_VARIANT := twrp
 endif
 
-# TI Enhancement Settings (Part 2)
-ifdef BOARD_USE_TI_ENHANCED_DOMX
-    BOARD_USE_TI_DUCATI_H264_PROFILE := true
-    BOARD_USE_TI_DOMX_LOW_SECURE_HEAP := true
-    COMMON_GLOBAL_CFLAGS += -DENHANCED_DOMX
-    ENHANCED_DOMX := true
-    TARGET_SPECIFIC_HEADER_PATH += $(COMMON_FOLDER)/domx/omx_core/inc
-    BOARD_USE_TI_CUSTOM_DOMX := true
-    DOMX_PATH := $(COMMON_FOLDER)/domx
-else
-    DOMX_PATH := hardware/ti/omap4xxx/domx
-endif
-
-ifdef OMAP_ENHANCEMENT
-    COMMON_GLOBAL_CFLAGS += -DOMAP_ENHANCEMENT -DTARGET_OMAP4 -DFORCE_SCREENSHOT_CPU_PATH
-endif
-
-ifdef OMAP_ENHANCEMENT_BURST_CAPTURE
-    COMMON_GLOBAL_CFLAGS += -DOMAP_ENHANCEMENT_BURST_CAPTURE
-endif
-
-ifdef OMAP_ENHANCEMENT_S3D
-    COMMON_GLOBAL_CFLAGS += -DOMAP_ENHANCEMENT_S3D
-endif
-
-ifdef OMAP_ENHANCEMENT_CPCAM
-    COMMON_GLOBAL_CFLAGS += -DOMAP_ENHANCEMENT_CPCAM
-    PRODUCT_MAKEFILES += $(LOCAL_DIR)/sdk_addon/ti_omap_addon.mk
-endif
-
-ifdef OMAP_ENHANCEMENT_VTC
-    COMMON_GLOBAL_CFLAGS += -DOMAP_ENHANCEMENT_VTC
-endif
-
-ifdef USE_ITTIAM_AAC
-    COMMON_GLOBAL_CFLAGS += -DUSE_ITTIAM_AAC
-endif
-
-ifdef OMAP_ENHANCEMENT_MULTIGPU
-    COMMON_GLOBAL_CFLAGS += -DOMAP_ENHANCEMENT_MULTIGPU
-endif
-
-
 # Misc.
 BOARD_NEEDS_CUTILS_LOG := true
-BOARD_USES_SECURE_SERVICES := true
-
-# Bootanimation
-TARGET_BOOTANIMATION_PRELOAD := false
-TARGET_BOOTANIMATION_TEXTURE_CACHE := false
-TARGET_BOOTANIMATION_USE_RGB565 := true
 
 #BOARD_SEPOLICY_DIRS += \
 #    device/amazon/omap4-common/sepolicy

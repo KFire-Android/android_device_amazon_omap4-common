@@ -19,11 +19,10 @@
 
 COMMON_FOLDER := device/amazon/omap4-common
 
+$(call inherit-product-if-exists, hardware/ti/omap4-next/omap4.mk)
+
 # set to allow building from omap4-common
 BOARD_VENDOR := amazon
-
-# Setup custom omap4xxx defines
-BOARD_USE_CUSTOM_LIBION := true
 
 ifeq ($(TARGET_PREBUILT_KERNEL),)
 LOCAL_KERNEL := $(DEVICE_FOLDER)/kernel
@@ -118,34 +117,7 @@ PRODUCT_PACKAGES += \
     evtest \
     strace \
     libjni_pinyinime \
-    sh \
-    libcorkscrew
-
-# symlinks and pvr files
-PRODUCT_PACKAGES += \
-    libion.so \
-    pvrsrvinit \
-    libPVRScopeServices.so
-
-# TI OMAP4
-PRODUCT_PACKAGES += \
-    libdomx \
-    libOMX_Core \
-    libOMX.TI.DUCATI1.VIDEO.H264E \
-    libOMX.TI.DUCATI1.VIDEO.H264SVCE \
-    libOMX.TI.DUCATI1.VIDEO.VC1E \
-    libOMX.TI.DUCATI1.VIDEO.MPEG4E \
-    libOMX.TI.DUCATI1.VIDEO.DECODER \
-    libOMX.TI.DUCATI1.VIDEO.DECODER.secure \
-    libOMX.TI.DUCATI1.VIDEO.CAMERA \
-    libOMX.TI.DUCATI1.MISC.SAMPLE \
-    libstagefrighthw \
-    libI420colorconvert \
-    libtiutils_custom \
-    libion_ti \
-    smc_pa_ctrl \
-    tf_daemon \
-    libtf_crypto_sst
+    sh
 
 # Prebuilts
 PRODUCT_COPY_FILES += \
