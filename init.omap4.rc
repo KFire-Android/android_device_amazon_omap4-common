@@ -14,6 +14,11 @@ on init
     mkdir /storage/usb1 0555 root root
 
 on fs
+    # zRAM read only 1 page at a time
+    write /proc/sys/vm/page-cluster 0
+    # lower swappiness when using swap
+    write /proc/sys/vm/swappiness 10
+
     # pvr module
     insmod /system/lib/modules/pvrsrvkm_sgx540_120.ko
     insmod /system/lib/modules/pvrsrvkm_sgx544_112.ko
@@ -43,6 +48,10 @@ on post-fs-data
     # make dir for trace
     mkdir /cache/trace 0777 system system
     chmod 0777 /cache/trace
+
+on early-boot
+    # set RLIMIT_MEMLOCK to 64MB
+    setrlimit 8 67108864 67108864
 
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
