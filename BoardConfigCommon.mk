@@ -15,7 +15,7 @@
 COMMON_FOLDER := device/amazon/omap4-common
 
 # inherit from omap4
--include hardware/ti/omap4-next/BoardConfigCommon.mk
+-include hardware/ti/omap4/BoardConfigCommon.mk
 
 # set to allow building from omap4-common
 BOARD_VENDOR := amazon

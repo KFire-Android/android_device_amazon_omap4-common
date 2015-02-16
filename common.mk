@@ -19,7 +19,7 @@
 
 COMMON_FOLDER := device/amazon/omap4-common
 
-$(call inherit-product-if-exists, hardware/ti/omap4-next/omap4.mk)
+$(call inherit-product-if-exists, hardware/ti/omap4/omap4.mk)
 
 # set to allow building from omap4-common
 BOARD_VENDOR := amazon
