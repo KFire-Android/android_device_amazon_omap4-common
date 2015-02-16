@@ -59,24 +59,25 @@ endif
 # Misc.
 BOARD_NEEDS_CUTILS_LOG := true
 
-#BOARD_SEPOLICY_DIRS += \
-#    device/amazon/omap4-common/sepolicy
+BOARD_SEPOLICY_DIRS += \
+    $(COMMON_FOLDER)/sepolicy
 
-#BOARD_SEPOLICY_UNION += \
-#    bluetooth.te \
-#    file_contexts \
-#    device.te \
-#    dhcp.te \
-#    domain.te \
-#    file.te \
-#    init_shell.te \
-#    mediaserver.te \
-#    netd.te \
-#    pvrsrvinit.te \
-#    rild.te \
-#    system.te \
-#    tee.te \
-#    vold.te
+BOARD_SEPOLICY_UNION += \
+    debuggered.te \
+    bluetooth.te \
+    file_contexts \
+    device.te \
+    dhcp.te \
+    domain.te \
+    file.te \
+    init_shell.te \
+    mediaserver.te \
+    netd.te \
+    pvrsrvinit.te \
+    rild.te \
+    system.te \
+    tee.te \
+    vold.te
 
 # Include an expanded selection of fonts
 EXTENDED_FONT_FOOTPRINT := true
