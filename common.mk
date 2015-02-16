@@ -51,7 +51,7 @@ PRODUCT_COPY_FILES += \
     $(call add-to-product-copy-files-if-exists,packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:system/etc/permissions/android.software.live_wallpaper.xml)
 
 # Device settings
-PRODUCT_PROPERTY_OVERRIDES += \
+ADDITIONAL_BUILD_PROPERTIES += \
     wifi.interface=wlan0 \
     wifi.supplicant_scan_interval=120 \
     ro.opengles.version=131072 \
