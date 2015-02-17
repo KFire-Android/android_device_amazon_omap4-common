@@ -28,3 +28,10 @@ vendor/lib/hw/gralloc.omap4460.so
 vendor/lib/hw/gralloc.omap4470.so
 etc/powervr.ini
 
+# Widevine DRM
+lib/libdrmdecrypt.so
+vendor/lib/drm/libdrmwvmplugin.so
+vendor/lib/mediadrm/libwvdrmengine.so
+vendor/lib/libwvdrm_L3.so
+vendor/lib/libwvm.so
+vendor/lib/libWVStreamControlAPI_L3.so
