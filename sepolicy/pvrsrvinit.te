@@ -12,3 +12,4 @@ allow pvrsrvinit pvrsrvinit_exec:file rx_file_perms;
 allow pvrsrvinit property_socket:sock_file write;
 allow pvrsrvinit init:unix_stream_socket connectto;
 allow pvrsrvinit default_prop:property_service set;
+allow pvrsrvinit gpu_device:chr_file rw_file_perms;

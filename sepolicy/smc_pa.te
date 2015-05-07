@@ -1,0 +1,10 @@
+# smc_pa
+type smc_pa, domain;
+type smc_pa_exec, exec_type, file_type;
+
+init_daemon_domain(smc_pa)
+
+allow smc_pa smc_pa_exec:file rx_file_perms;
+allow smc_pa shell_exec:file rx_file_perms;
+allow smc_pa tee_exec:file rx_file_perms;
+allow smc_pa tee_device:chr_file rw_file_perms;

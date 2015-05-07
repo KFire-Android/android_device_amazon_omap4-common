@@ -1,0 +1,10 @@
+# fixmac
+type fixmac, domain;
+type fixmac_exec, exec_type, file_type;
+
+init_daemon_domain(fixmac)
+
+allow fixmac fixmac_exec:dir { remove_name add_name };
+allow fixmac fixmac_exec:file { rx_file_perms };
+allow fixmac radio_data_file:dir { write add_name };
+allow fixmac radio_data_file:file { write create setattr };

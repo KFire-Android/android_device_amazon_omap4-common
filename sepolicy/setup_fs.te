@@ -1,0 +1,7 @@
+# setup_fs
+type setup_fs, domain;
+type setup_fs_exec, exec_type, file_type;
+
+init_daemon_domain(setup_fs)
+
+allow setup_fs setup_fs_exec:file rx_file_perms;
