@@ -41,9 +41,6 @@ on post-fs
     # 8 - High Profile
     setprop video.h264enc.profile 1
 
-    # symlink egl.cfg
-    symlink /sys/egl/egl.cfg /system/lib/egl/egl.cfg
-
 on post-fs-data
     # make dir for trace
     mkdir /cache/trace 0777 system system
@@ -55,7 +52,6 @@ on early-boot
 
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
-    chmod 0666 /dev/pvrsrvkm
 
     # wifi
     mkdir /data/misc/wifi 0770 wifi wifi
