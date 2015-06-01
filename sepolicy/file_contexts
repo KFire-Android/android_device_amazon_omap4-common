@@ -23,6 +23,9 @@
 # ttyO0 is for uart driver. gps_device is device specific
 /dev/ttyO0                               u:object_r:gps_device:s0
 
+# serial console
+/dev/ttyO2                               u:object_r:serial_device:s0
+
 # PDS partition
 /pds(/.*)?                               u:object_r:pds_file:s0
 /pds/wifi/nvs_map.bin                    u:object_r:radio_data_file:s0
@@ -32,6 +35,9 @@
 
 # for wpa_supp
 /dev/rfkill                              u:object_r:rfkill_device:s0
+
+# tee
+/dev/tf_ctrl                             u:object_r:tee_device:s0
 
 # System binaries
 /system/bin/fix-mac.sh                   u:object_r:fixmac_exec:s0

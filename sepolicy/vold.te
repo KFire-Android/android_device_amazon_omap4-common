@@ -1,1 +1,2 @@
 allow vold sdcard_external:file getattr;
+allow vold kernel:system module_request;

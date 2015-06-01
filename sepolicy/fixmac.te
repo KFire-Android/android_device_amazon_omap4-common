@@ -6,5 +6,10 @@ init_daemon_domain(fixmac)
 
 allow fixmac fixmac_exec:dir { remove_name add_name };
 allow fixmac fixmac_exec:file { rx_file_perms };
-allow fixmac radio_data_file:dir { write add_name };
-allow fixmac radio_data_file:file { write create setattr };
+allow fixmac radio_data_file:dir { write add_name search };
+allow fixmac radio_data_file:file { read write create open setattr getattr };
+allow fixmac self:capability sys_module;
+allow fixmac shell_exec:file read;
+allow fixmac system_file:file execute_no_trans;
+allow fixmac kernel:process setsched;
+allow fixmac self:netlink_socket create;
