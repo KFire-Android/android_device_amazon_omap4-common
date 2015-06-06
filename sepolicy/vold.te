@@ -1,2 +1,4 @@
 allow vold sdcard_external:file getattr;
 allow vold kernel:system module_request;
+allow vold efs_file:dir { read getattr open ioctl };
+allow vold pds_file:dir { read getattr open ioctl };
