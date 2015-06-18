@@ -1,2 +1,2 @@
 allow tee pds_file:dir getattr;
-allow tee efs_file:dir getattr;
+allow tee efs_file:dir { getattr search };

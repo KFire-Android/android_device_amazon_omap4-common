@@ -51,3 +51,6 @@
 /system/etc/firmware/ducati-m3.bin                  u:object_r:firmware_ducati:s0
 /system/etc/firmware/ducati-m3-core0.xem3           u:object_r:firmware_ducati:s0
 /system/etc/firmware/ducati-m3-core0_512MB.xem3     u:object_r:firmware_ducati:s0
+
+# bcm2076 rfkill sysfs
+/sys/devices/platform/bcm2076_bluetooth/rfkill(/.*)?  u:object_r:sysfs_bluetooth_writable:s0
